@@ -198,6 +198,14 @@ public final class ModKeyMappings {
             CATEGORY_MANNEQUIN
     );
 
+    /** 呼出片场配乐与背景曲库管理界面 (默认未绑定，用户可在控制中自由绑定) */
+    public static final KeyMapping TOGGLE_MUSIC = new KeyMapping(
+            "key.mannequin.toggle_music",
+            InputConstants.Type.KEYSYM,
+            InputConstants.UNKNOWN.getValue(),
+            CATEGORY_MANNEQUIN
+    );
+
     private ModKeyMappings() {
     }
 
@@ -230,5 +238,6 @@ public final class ModKeyMappings {
         event.register(CYCLE_SPEED_GEAR);
         event.register(QUICK_MENU);
         event.register(ADD_CAMERA_STATION);
+        event.register(TOGGLE_MUSIC);
     }
 }

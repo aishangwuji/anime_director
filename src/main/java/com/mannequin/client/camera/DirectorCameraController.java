@@ -422,6 +422,15 @@ public final class DirectorCameraController {
             }
         }
 
+        // 呼出片场配乐与背景曲库界面 (快捷键默认未绑定，用户可自定义)
+        if (ModKeyMappings.TOGGLE_MUSIC.consumeClick()) {
+            if (mc.screen instanceof com.mannequin.client.gui.StudioMusicScreen) {
+                mc.setScreen(null);
+            } else if (mc.screen == null) {
+                mc.setScreen(new com.mannequin.client.gui.StudioMusicScreen());
+            }
+        }
+
         // 启动/暂停排演回放 (P 键，避免与原版 Enter 聊天冲突)
         if (ModKeyMappings.START_DOLLY.consumeClick()) {
             if (MasterClockEngine.INSTANCE.getState() == MasterClockEngine.State.PLAYING) {

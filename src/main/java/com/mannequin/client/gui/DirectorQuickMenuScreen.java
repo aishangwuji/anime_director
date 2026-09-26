@@ -35,7 +35,7 @@ public class DirectorQuickMenuScreen extends Screen {
     @Override
     protected void init() {
         int panelWidth = Math.min(460, width - 16);
-        int panelHeight = Math.min(238, height - 12);
+        int panelHeight = Math.min(242, height - 12);
         int startX = (width - panelWidth) / 2;
         int startY = (height - panelHeight) / 2;
 
@@ -405,6 +405,51 @@ public class DirectorQuickMenuScreen extends Screen {
                 .bounds(gridStartX + (btnWidth + gapX) * 2, r6Y, btnWidth, btnHeight)
                 .tooltip(Tooltip.create(Component.literal("§e[Delete] 清空全场数据\n§7重置全场录制的角色动作、分镜机位与相机滑轨")))
                 .build());
+
+        // ==================== 第 7 行：片场配乐与背景曲库 ====================
+        int r7Y = gridStartY + (btnHeight + gapY) * 7;
+        com.mannequin.client.audio.StudioMusicEngine musicEngine = com.mannequin.client.audio.StudioMusicEngine.INSTANCE;
+        boolean musicPlaying = musicEngine.isPlaying();
+        com.mannequin.client.audio.StudioMusicEngine.Track activeTrack = musicEngine.getCurrentTrack();
+
+        // 22. 打开片场配乐曲库与播放器界面
+        String musicBtnTitle = "🎵 片场配乐 " + (musicPlaying && activeTrack != null ? "§a[播]" : (musicEngine.isPaused() ? "§e[停]" : "§7[空]"));
+        addRenderableWidget(Button.builder(
+                Component.literal(musicBtnTitle),
+                btn -> {
+                    if (minecraft != null) {
+                        minecraft.setScreen(new StudioMusicScreen(this));
+                    }
+                })
+                .bounds(gridStartX, r7Y, btnWidth, btnHeight)
+                .tooltip(Tooltip.create(Component.literal("§d🎵 片场配乐与背景曲库\n" +
+                        "§7自定义本地音乐文件夹，原生解码推流播放 MP3 / WAV / OGG，\n" +
+                        "支持无级音量、上一首/下一首与多种循环模式，为片场实时配乐！\n" +
+                        (activeTrack != null ? "§f当前曲目: §e" + activeTrack.title() + " §7[" + activeTrack.format() + "]" : "§7当前暂无播放曲目"))))
+                .build());
+
+        // 23. 配乐播放/暂停一键切换
+        String playPauseLabel = musicPlaying ? "⏸ 配乐暂停" : "▶ 配乐播放";
+        addRenderableWidget(Button.builder(
+                Component.literal(playPauseLabel),
+                btn -> {
+                    musicEngine.togglePlayPause();
+                    rebuildWidgets();
+                })
+                .bounds(gridStartX + btnWidth + gapX, r7Y, btnWidth, btnHeight)
+                .tooltip(Tooltip.create(Component.literal("§e一键启动 / 暂停片场背景音乐")))
+                .build());
+
+        // 24. 配乐下一首切歌
+        addRenderableWidget(Button.builder(
+                Component.literal("⏭ 配乐切歌"),
+                btn -> {
+                    musicEngine.next();
+                    rebuildWidgets();
+                })
+                .bounds(gridStartX + (btnWidth + gapX) * 2, r7Y, btnWidth, btnHeight)
+                .tooltip(Tooltip.create(Component.literal("§e切换至下一首背景配乐")))
+                .build());
     }
 
     @Override
@@ -420,7 +465,7 @@ public class DirectorQuickMenuScreen extends Screen {
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         int panelWidth = Math.min(460, width - 16);
-        int panelHeight = Math.min(238, height - 12);
+        int panelHeight = Math.min(242, height - 12);
         int startX = (width - panelWidth) / 2;
         int startY = (height - panelHeight) / 2;
 

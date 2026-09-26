@@ -28,5 +28,6 @@
   "key.mannequin.cycle_speed_gear": "切换自由相机多档位航速预设 (默认 J)",
   "key.mannequin.quick_menu": "呼出导演快捷操作中心 (默认 C)",
   "key.mannequin.add_camera_station": "打下固定分镜拍摄机位 (默认 B)",
-  "key.mannequin.toggle_workspace_mode": "切换搭建/实拍双模式工作区 (默认 F4)"
+  "key.mannequin.toggle_workspace_mode": "切换搭建/实拍双模式工作区 (默认 F4)",
+  "key.mannequin.toggle_music": "呼出片场配乐与背景曲库"
 }

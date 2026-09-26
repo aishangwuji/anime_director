@@ -28,5 +28,6 @@
   "key.mannequin.cycle_speed_gear": "Cycle Camera Flight Speed Gear (Default J)",
   "key.mannequin.quick_menu": "Open Director Quick Menu (Default C)",
   "key.mannequin.add_camera_station": "Add Camera Station (Default B)",
-  "key.mannequin.toggle_workspace_mode": "Toggle Studio Build / Cinematic Shoot Mode (Default F4)"
+  "key.mannequin.toggle_workspace_mode": "Toggle Studio Build / Cinematic Shoot Mode (Default F4)",
+  "key.mannequin.toggle_music": "Open Studio Music & BGM Player"
 }
