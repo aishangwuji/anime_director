@@ -238,8 +238,8 @@ public class DirectorTutorialScreen extends Screen {
         int startX = (width - panelWidth) / 2;
         int startY = (height - panelHeight) / 2;
 
-        // 手册主面板底框
-        g.fill(startX, startY, startX + panelWidth, startY + panelHeight, 0xF0111827);
+        // 手册主面板底框 (实心不透明深蓝黑底，杜绝背景世界模糊透射)
+        g.fill(startX, startY, startX + panelWidth, startY + panelHeight, 0xFF111827);
         // 顶部标题栏
         g.fill(startX, startY, startX + panelWidth, startY + 24, 0xFF1F2937);
         g.fill(startX, startY, startX + panelWidth, startY + 2, 0xFF00E5FF); // 顶部青色流光饰条
@@ -250,13 +250,14 @@ public class DirectorTutorialScreen extends Screen {
         int activeTabX = startX + 5 + activeChapter * tabWidth;
         g.fill(activeTabX, tabY + 16, activeTabX + tabWidth - 2, tabY + 18, 0xFF00E5FF);
 
-        // 标题文字
-        g.drawCenteredString(font, "§6§l漫剧导演制片实训手册 §7(按 H 或 ESC 关闭)", width / 2, startY + 7, 0xFFFFFFFF);
+        // 标题文字 (带阴影)
+        String headTitle = "§6§l漫剧导演制片实训手册 §7(按 H 或 ESC 关闭)";
+        g.drawString(font, headTitle, (width - font.width(headTitle)) / 2, startY + 7, 0xFFFFFFFF, true);
 
         // 渲染当前章节标题与文本内容（带裁剪与自动换行）
         if (activeChapter >= 0 && activeChapter < chapters.size()) {
             TutorialChapter chapter = chapters.get(activeChapter);
-            g.drawString(font, "§b【" + chapter.title() + "】", startX + 12, startY + 48, 0xFFFFFFFF);
+            g.drawString(font, "§b【" + chapter.title() + "】", startX + 12, startY + 48, 0xFFFFFFFF, true);
 
             int contentTop = startY + 60;
             int contentBottom = startY + panelHeight - 30;
@@ -277,7 +278,7 @@ public class DirectorTutorialScreen extends Screen {
                 var formattedLines = font.split(Component.literal(rawLine), maxTextWidth);
                 for (var seq : formattedLines) {
                     if (textY + 9 >= contentTop && textY <= contentBottom) {
-                        g.drawString(font, seq, startX + 12, textY, 0xFFE0E0E0);
+                        g.drawString(font, seq, startX + 12, textY, 0xFFFFFFFF, true);
                     }
                     textY += 11;
                     totalTextHeight += 11;

@@ -469,8 +469,11 @@ public class DirectorQuickMenuScreen extends Screen {
         int startX = (width - panelWidth) / 2;
         int startY = (height - panelHeight) / 2;
 
-        // 1. 半透明深蓝暗色磨砂玻璃背景
-        g.fill(startX, startY, startX + panelWidth, startY + panelHeight, 0xEE0B111D);
+        // 0. 全屏半透明深色暗角遮罩，隔绝模糊背景
+        g.fill(0, 0, width, height, 0x88000000);
+
+        // 1. 实心不透明深蓝底色 (0xFF0B111D)，杜绝背景世界模糊透射
+        g.fill(startX, startY, startX + panelWidth, startY + panelHeight, 0xFF0B111D);
 
         // 2. 外部霓虹青高质感边框
         int borderCyan = 0xFF00E5FF;
@@ -495,7 +498,7 @@ public class DirectorQuickMenuScreen extends Screen {
                     mce.getTimeScaleValue(),
                     mce.getTotalDurationSeconds()
             );
-            g.drawString(font, status, startX + 12, startY + 22, 0xFFAAAAAA, false);
+            g.drawString(font, status, startX + 12, startY + 22, 0xFFE2E8F0, true);
         }
 
         // 4. 渲染按钮组件与浮窗 Tooltips

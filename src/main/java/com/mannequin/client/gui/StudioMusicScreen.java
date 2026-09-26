@@ -49,20 +49,20 @@ public class StudioMusicScreen extends Screen {
         // ==================== 顶部标题栏工具按钮 ====================
         // 1. 打开本地曲库文件夹 (Windows 资源管理器)
         addRenderableWidget(Button.builder(
-                Component.literal("📁 打开目录"),
+                Component.literal("打开目录"),
                 btn -> engine.openMusicFolder())
-                .bounds(startX + panelWidth - 162, startY + 8, 76, 20)
+                .bounds(startX + panelWidth - 146, startY + 8, 68, 20)
                 .tooltip(Tooltip.create(Component.literal("§e在 Windows 资源管理器中打开当前音乐文件夹\n§7可直接将 .mp3, .wav, .ogg 音乐文件拖入此目录！")))
                 .build());
 
         // 2. 刷新曲库
         addRenderableWidget(Button.builder(
-                Component.literal("🔄 刷新"),
+                Component.literal("刷新"),
                 btn -> {
                     engine.rescanMusicDirectory();
                     rebuildWidgets();
                 })
-                .bounds(startX + panelWidth - 82, startY + 8, 54, 20)
+                .bounds(startX + panelWidth - 74, startY + 8, 44, 20)
                 .tooltip(Tooltip.create(Component.literal("§e重新扫描当前文件夹中的音频文件")))
                 .build());
 
@@ -70,7 +70,7 @@ public class StudioMusicScreen extends Screen {
         addRenderableWidget(Button.builder(
                 Component.literal("✕"),
                 btn -> onClose())
-                .bounds(startX + panelWidth - 24, startY + 8, 18, 20)
+                .bounds(startX + panelWidth - 26, startY + 8, 18, 20)
                 .tooltip(Tooltip.create(Component.literal("§c关闭 (ESC)")))
                 .build());
 
@@ -284,8 +284,11 @@ public class StudioMusicScreen extends Screen {
         int startX = (width - panelWidth) / 2;
         int startY = (height - panelHeight) / 2;
 
-        // 1. 半透明深蓝暗色磨砂玻璃背景
-        g.fill(startX, startY, startX + panelWidth, startY + panelHeight, 0xEE0B111D);
+        // 0. 全屏半透明深色暗角，压暗背景世界并彻底隔绝模糊干扰
+        g.fill(0, 0, width, height, 0x88000000);
+
+        // 1. 实心不透明深蓝底色 (0xFF0B132B)，彻底杜绝背景世界模糊透射
+        g.fill(startX, startY, startX + panelWidth, startY + panelHeight, 0xFF0B132B);
 
         // 2. 外部霓虹紫金质感边框
         int borderMagenta = 0xFFD946EF;
@@ -294,13 +297,13 @@ public class StudioMusicScreen extends Screen {
         g.fill(startX, startY, startX + 1, startY + panelHeight, borderMagenta);
         g.fill(startX + panelWidth - 1, startY, startX + panelWidth, startY + panelHeight, borderMagenta);
 
-        // 3. 顶部标题
+        // 3. 顶部标题 (带阴影)
         if (font != null) {
             g.drawString(font, "§d§l片场配乐与背景曲库 §7(Studio Music Player)", startX + 12, startY + 8, 0xFFFFFFFF, true);
-            g.drawString(font, "§8原生解码推流 | 支持 MP3 / WAV / OGG | 异步推流不占帧率", startX + 12, startY + 20, 0xFFAAAAAA, false);
+            g.drawString(font, "§f原生解码推流 §8| §b支持 MP3 / WAV / OGG §8| §a异步推流不占帧率", startX + 12, startY + 20, 0xFFE2E8F0, true);
 
-            // 路径前缀标签
-            g.drawString(font, "§e📁 曲库目录:", startX + 12, startY + 40, 0xFFFFFFFF, false);
+            // 路径前缀标签 (带阴影)
+            g.drawString(font, "§e曲库目录:", startX + 12, startY + 40, 0xFFFFFFFF, true);
         }
 
         // 4. 渲染列表区域
@@ -311,17 +314,15 @@ public class StudioMusicScreen extends Screen {
         int listStartY = pathRowY + 26;
         int listHeight = 125;
 
-        // 列表背景板
-        g.fill(startX + 12, listStartY, startX + panelWidth - 12, listStartY + listHeight, 0x55030712);
+        // 列表背景板 (实心深色底框)
+        g.fill(startX + 12, listStartY, startX + panelWidth - 12, listStartY + listHeight, 0xFF111827);
 
         if (tracks.isEmpty()) {
             if (font != null) {
-                String line1 = "§e曲库文件夹内暂无音频文件 (.mp3, .wav, .ogg)";
-                String line2 = "§7请点击右上角【📁 打开目录】将音乐拖入文件夹，然后点击【🔄 刷新】！";
-                String line3 = "§8支持格式：MP3 (MPEG-1 Layer 3)、WAV (16-bit PCM)、OGG (Vorbis)";
-                g.drawCenteredString(font, line1, startX + panelWidth / 2, listStartY + 35, 0xFFFFFFFF);
-                g.drawCenteredString(font, line2, startX + panelWidth / 2, listStartY + 55, 0xFFAAAAAA);
-                g.drawCenteredString(font, line3, startX + panelWidth / 2, listStartY + 75, 0xFF666666);
+                int cx = startX + panelWidth / 2;
+                g.drawString(font, "§e§l[提示] 曲库文件夹内暂无音频文件 (.mp3, .wav, .ogg)", cx - font.width("[提示] 曲库文件夹内暂无音频文件 (.mp3, .wav, .ogg)") / 2, listStartY + 30, 0xFFFDE047, true);
+                g.drawString(font, "§f请点击右上角【打开目录】将音乐拖入文件夹，然后点击【刷新】！", cx - font.width("请点击右上角【打开目录】将音乐拖入文件夹，然后点击【刷新】！") / 2, listStartY + 54, 0xFFFFFFFF, true);
+                g.drawString(font, "§b支持格式：MP3 (MPEG-1 Layer 3)、WAV (16-bit PCM)、OGG (Vorbis)", cx - font.width("支持格式：MP3 (MPEG-1 Layer 3)、WAV (16-bit PCM)、OGG (Vorbis)") / 2, listStartY + 74, 0xFF7DD3FC, true);
             }
         } else {
             int startIndex = page * ITEMS_PER_PAGE;
@@ -336,8 +337,8 @@ public class StudioMusicScreen extends Screen {
                 boolean isPlayingThis = isCurrent && engine.isPlaying();
                 boolean isPausedThis = isCurrent && engine.isPaused();
 
-                // 单项背景框
-                int bgColor = isCurrent ? 0x667C3AED : 0x331F2937;
+                // 单项背景框 (实心)
+                int bgColor = isCurrent ? 0xFF2E1065 : 0xFF1E293B;
                 int itemRight = startX + panelWidth - 12;
                 g.fill(startX + 12, itemY, itemRight, itemY + itemHeight, bgColor);
 
@@ -348,9 +349,9 @@ public class StudioMusicScreen extends Screen {
                 }
 
                 if (font != null) {
-                    // 序号与状态图标
+                    // 序号与状态图标 (带阴影)
                     String statusPrefix = isPlayingThis ? "§a▶ " : (isPausedThis ? "§e⏸ " : String.format("§7#%02d ", i + 1));
-                    g.drawString(font, statusPrefix, startX + 18, itemY + 6, 0xFFFFFFFF, false);
+                    g.drawString(font, statusPrefix, startX + 18, itemY + 6, 0xFFFFFFFF, true);
 
                     // 格式徽章 [MP3] / [WAV] / [OGG]
                     String formatTag = switch (track.format().toUpperCase()) {
@@ -360,34 +361,34 @@ public class StudioMusicScreen extends Screen {
                         default -> "§7[" + track.format() + "]§r ";
                     };
 
-                    // 曲目标题 (自适应截断)
+                    // 曲目标题 (带阴影)
                     int maxTitleWidth = panelWidth - 210;
                     String titleDisplay = font.plainSubstrByWidth(track.title(), maxTitleWidth);
                     if (titleDisplay.length() < track.title().length()) {
                         titleDisplay += "...";
                     }
                     String fullTitle = formatTag + (isCurrent ? "§6§l" : "§f") + titleDisplay;
-                    g.drawString(font, fullTitle, startX + 46, itemY + 6, 0xFFFFFFFF, false);
+                    g.drawString(font, fullTitle, startX + 46, itemY + 6, 0xFFFFFFFF, true);
 
-                    // 文件大小
+                    // 文件大小 (高对比度带阴影)
                     String sizeText = formatFileSize(track.fileSizeBytes());
-                    g.drawString(font, "§8" + sizeText, startX + panelWidth - 140, itemY + 6, 0xFF888888, false);
+                    g.drawString(font, "§7" + sizeText, startX + panelWidth - 140, itemY + 6, 0xFFCBD5E1, true);
                 }
 
                 itemY += itemHeight + itemGap;
             }
 
-            // 分页居中文字
+            // 分页居中文字 (带阴影)
             if (font != null) {
                 int maxPage = Math.max(0, (tracks.size() - 1) / ITEMS_PER_PAGE);
                 String pageText = String.format("§7第 §f%d§7 / §f%d§7 页 (共 §e%d§7 首)", page + 1, maxPage + 1, tracks.size());
-                g.drawCenteredString(font, pageText, startX + panelWidth / 2, listStartY + listHeight - 12, 0xFFAAAAAA);
+                g.drawString(font, pageText, (startX + panelWidth / 2) - font.width(pageText) / 2, listStartY + listHeight - 12, 0xFFFFFFFF, true);
             }
         }
 
-        // 5. 底部播放状态与控制板底框
+        // 5. 底部播放状态与控制板底框 (实心)
         int bottomBarY = startY + panelHeight - 56;
-        g.fill(startX + 12, bottomBarY, startX + panelWidth - 12, startY + panelHeight - 8, 0x660F172A);
+        g.fill(startX + 12, bottomBarY, startX + panelWidth - 12, startY + panelHeight - 8, 0xFF1E293B);
 
         if (font != null) {
             StudioMusicEngine.Track current = engine.getCurrentTrack();
@@ -398,7 +399,7 @@ public class StudioMusicScreen extends Screen {
             } else {
                 nowPlayingText = "§7🎵 播放器待机中 (点击曲目右侧播放按钮开始)";
             }
-            g.drawString(font, nowPlayingText, startX + 16, bottomBarY + 5, 0xFFFFFFFF, false);
+            g.drawString(font, nowPlayingText, startX + 16, bottomBarY + 5, 0xFFFFFFFF, true);
         }
 
         // 6. 渲染子按钮组件及 Tooltips

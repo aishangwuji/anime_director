@@ -281,18 +281,21 @@ public class CameraMonitorScreen extends Screen {
         int startX = (width - panelWidth) / 2;
         int startY = (height - panelHeight) / 2;
 
-        // 1. 背景与青色边框
-        g.fill(startX, startY, startX + panelWidth, startY + panelHeight, 0xEE0B111D);
+        // 0. 全屏半透明深色暗角遮罩，隔绝背景世界模糊
+        g.fill(0, 0, width, height, 0x88000000);
+
+        // 1. 实心不透明深蓝底色 (0xFF0B132B)，彻底杜绝背景世界模糊透射
+        g.fill(startX, startY, startX + panelWidth, startY + panelHeight, 0xFF0B132B);
         int borderCyan = 0xFF00E5FF;
         g.fill(startX, startY, startX + panelWidth, startY + 1, borderCyan);
         g.fill(startX, startY + panelHeight - 1, startX + panelWidth, startY + panelHeight, borderCyan);
         g.fill(startX, startY, startX + 1, startY + panelHeight, borderCyan);
         g.fill(startX + panelWidth - 1, startY, startX + panelWidth, startY + panelHeight, borderCyan);
 
-        // 2. 标题文本
+        // 2. 标题文本 (带阴影，清晰锐利)
         if (font != null) {
             g.drawString(font, "§6§l导播多机位监视大厅 §7(Camera Studio Monitor)", startX + 12, startY + 8, 0xFFFFFFFF, true);
-            g.drawString(font, "§8选择机位即刻切入实拍试看 | 3D场景中已标识摄像头与视锥线框", startX + 12, startY + 22, 0xFFAAAAAA, false);
+            g.drawString(font, "§f选择机位即刻切入实拍试看 §8| §b3D场景中已标识摄像头与视锥线框", startX + 12, startY + 22, 0xFFE2E8F0, true);
 
             MultiCameraManager mcm = MultiCameraManager.INSTANCE;
             List<CameraStation> stations = mcm.getStations();
@@ -303,18 +306,18 @@ public class CameraMonitorScreen extends Screen {
                 int rX = startX + 200;
                 int rY = startY + 42;
 
-                g.fill(rX - 4, rY - 4, startX + panelWidth - 12, rY + 68, 0x55000000);
-                g.drawString(font, "§e【机位详情】" + cur.name(), rX, rY, 0xFFFFFFFF, false);
-                g.drawString(font, String.format("§7坐标: §f%.1f, %.1f, %.1f", cur.position().x, cur.position().y, cur.position().z), rX, rY + 14, 0xFFCCCCCC, false);
-                g.drawString(font, String.format("§7朝向: §fYaw %.0f° | Pitch %.0f°", cur.yaw(), cur.pitch()), rX, rY + 28, 0xFFCCCCCC, false);
-                g.drawString(font, String.format("§7焦距: §bFOV %.1f° §7(横滚: §f%.0f°§7)", cur.fov(), cur.roll()), rX, rY + 42, 0xFFCCCCCC, false);
-                g.drawString(font, "§a✔ 3D发光机位与视锥体已在世界呈现", rX, rY + 56, 0xFF88FF88, false);
+                g.fill(rX - 4, rY - 4, startX + panelWidth - 12, rY + 68, 0xFF1E293B);
+                g.drawString(font, "§e【机位详情】" + cur.name(), rX, rY, 0xFFFFFFFF, true);
+                g.drawString(font, String.format("§7坐标: §f%.1f, %.1f, %.1f", cur.position().x, cur.position().y, cur.position().z), rX, rY + 14, 0xFFE2E8F0, true);
+                g.drawString(font, String.format("§7朝向: §fYaw %.0f° | Pitch %.0f°", cur.yaw(), cur.pitch()), rX, rY + 28, 0xFFE2E8F0, true);
+                g.drawString(font, String.format("§7焦距: §bFOV %.1f° §7(横滚: §f%.0f°§7)", cur.fov(), cur.roll()), rX, rY + 42, 0xFFE2E8F0, true);
+                g.drawString(font, "§a✔ 3D发光机位与视锥体已在世界呈现", rX, rY + 56, 0xFF86EFAC, true);
             } else {
                 int rX = startX + 200;
                 int rY = startY + 42;
-                g.drawString(font, "§c尚未添加任何拍摄机位！", rX, rY, 0xFFFF8888, false);
-                g.drawString(font, "§7请在上帝视角飞到理想构图处，", rX, rY + 16, 0xFFAAAAAA, false);
-                g.drawString(font, "§7按 [B] 键或点击下方按钮打下机位。", rX, rY + 30, 0xFFAAAAAA, false);
+                g.drawString(font, "§c尚未添加任何拍摄机位！", rX, rY, 0xFFFF8888, true);
+                g.drawString(font, "§f请在上帝视角飞到理想构图处，", rX, rY + 16, 0xFFFFFFFF, true);
+                g.drawString(font, "§f按 [B] 键或点击下方按钮打下机位。", rX, rY + 30, 0xFFE2E8F0, true);
             }
         }
 

@@ -51,41 +51,41 @@ public class BuildingLibraryScreen extends Screen {
 
         // 顶部选项卡切换
         addRenderableWidget(Button.builder(
-                Component.literal("🏛 建筑库 (" + blueprints.size() + ")"),
+                Component.literal("建筑蓝图库 (" + blueprints.size() + ")"),
                 btn -> {
                     activeTab = Tab.LIBRARY;
                     rebuildWidgets();
                 })
-                .bounds(startX + 12, startY + 8, 110, 20)
+                .bounds(startX + 12, startY + 8, 120, 20)
                 .build());
 
         BuildingSelectionManager bsm = BuildingSelectionManager.INSTANCE;
         boolean hasSel = bsm.hasSelection();
         addRenderableWidget(Button.builder(
-                Component.literal("📦 打包选区 " + (hasSel ? "§a[就绪]" : "§7[未选]")),
+                Component.literal("选区打包 " + (hasSel ? "§a[就绪]" : "§7[未选]")),
                 btn -> {
                     activeTab = Tab.EXPORT;
                     rebuildWidgets();
                 })
-                .bounds(startX + 126, startY + 8, 120, 20)
+                .bounds(startX + 136, startY + 8, 120, 20)
                 .build());
 
         // 顶部右侧工具按钮：打开文件夹
         addRenderableWidget(Button.builder(
-                Component.literal("📁 打开目录"),
+                Component.literal("打开目录"),
                 btn -> BuildingBlueprintHelper.openBlueprintsFolder())
-                .bounds(startX + panelWidth - 146, startY + 8, 76, 20)
+                .bounds(startX + panelWidth - 146, startY + 8, 68, 20)
                 .tooltip(Tooltip.create(Component.literal("§e在 Windows 资源管理器中打开蓝图存储文件夹\n§7可直接将好友发送的 .nbt 建筑文件拖入此目录！")))
                 .build());
 
         // 顶部右侧工具按钮：刷新列表
         addRenderableWidget(Button.builder(
-                Component.literal("🔄"),
+                Component.literal("刷新"),
                 btn -> {
                     refreshBlueprints();
                     rebuildWidgets();
                 })
-                .bounds(startX + panelWidth - 66, startY + 8, 20, 20)
+                .bounds(startX + panelWidth - 74, startY + 8, 44, 20)
                 .tooltip(Tooltip.create(Component.literal("§e刷新本地蓝图列表")))
                 .build());
 
@@ -93,7 +93,7 @@ public class BuildingLibraryScreen extends Screen {
         addRenderableWidget(Button.builder(
                 Component.literal("✕"),
                 btn -> onClose())
-                .bounds(startX + panelWidth - 42, startY + 8, 20, 20)
+                .bounds(startX + panelWidth - 26, startY + 8, 18, 20)
                 .tooltip(Tooltip.create(Component.literal("§c关闭 (ESC)")))
                 .build());
 
@@ -262,11 +262,14 @@ public class BuildingLibraryScreen extends Screen {
         int startX = (width - panelWidth) / 2;
         int startY = (height - panelHeight) / 2;
 
-        // 1. 半透明高质感背景
-        g.fill(startX, startY, startX + panelWidth, startY + panelHeight, 0xEE0B111D);
+        // 0. 全屏半透明深色暗角，压暗背景世界并彻底隔绝模糊干扰
+        g.fill(0, 0, width, height, 0x88000000);
 
-        // 2. 外部霓虹橙/金高质感边框
-        int borderGold = 0xFFFFB300;
+        // 1. 实心不透明深色面板背景 (0xFF0D1527)，确保文字边缘像素 100% 清晰不发虚
+        g.fill(startX, startY, startX + panelWidth, startY + panelHeight, 0xFF0D1527);
+
+        // 2. 外部金黄/琥珀高质感边框
+        int borderGold = 0xFFF59E0B;
         g.fill(startX, startY, startX + panelWidth, startY + 1, borderGold);
         g.fill(startX, startY + panelHeight - 1, startX + panelWidth, startY + panelHeight, borderGold);
         g.fill(startX, startY, startX + 1, startY + panelHeight, borderGold);
@@ -286,8 +289,22 @@ public class BuildingLibraryScreen extends Screen {
 
     private void renderLibraryTab(GuiGraphics g, int startX, int startY, int panelWidth, int contentHeight) {
         if (blueprints.isEmpty()) {
-            g.drawCenteredString(font, "§7[提示] 蓝图库暂无建筑文件", startX + panelWidth / 2, startY + 50, 0xFFAAAAAA);
-            g.drawCenteredString(font, "§8点击右上角【打开目录】将好友分享的 .nbt 建筑直接丢入文件夹，或使用蓝图仪框选导出！", startX + panelWidth / 2, startY + 70, 0xFF888888);
+            int cardX = startX + 20;
+            int cardY = startY + 16;
+            int cardW = panelWidth - 40;
+            int cardH = contentHeight - 24;
+
+            // 实心卡片底板与深青边框
+            g.fill(cardX, cardY, cardX + cardW, cardY + cardH, 0xFF1E293B);
+            g.fill(cardX, cardY, cardX + cardW, cardY + 1, 0xFF38BDF8);
+            g.fill(cardX, cardY + cardH - 1, cardX + cardW, cardY + cardH, 0xFF38BDF8);
+            g.fill(cardX, cardY, cardX + 1, cardY + cardH, 0xFF38BDF8);
+            g.fill(cardX + cardW - 1, cardY, cardX + cardW, cardY + cardH, 0xFF38BDF8);
+
+            int cx = startX + panelWidth / 2;
+            g.drawString(font, "§e§l[提示] 蓝图库暂无建筑文件", cx - font.width("[提示] 蓝图库暂无建筑文件") / 2, cardY + 28, 0xFFFDE047, true);
+            g.drawString(font, "§f点击右上角【打开目录】将好友分享的 .nbt 建筑直接丢入文件夹，", cx - font.width("点击右上角【打开目录】将好友分享的 .nbt 建筑直接丢入文件夹，") / 2, cardY + 54, 0xFFFFFFFF, true);
+            g.drawString(font, "§b或在游戏中使用【片场建筑蓝图仪】框选任意建筑并导出！", cx - font.width("或在游戏中使用【片场建筑蓝图仪】框选任意建筑并导出！") / 2, cardY + 74, 0xFF7DD3FC, true);
             return;
         }
 
@@ -302,52 +319,74 @@ public class BuildingLibraryScreen extends Screen {
         for (int i = startIndex; i < endIndex; i++) {
             BuildingBlueprintHelper.BlueprintInfo bp = blueprints.get(i);
 
-            // 卡片磨砂半透明背景与细边框
-            g.fill(startX + 14, itemY, startX + panelWidth - 14, itemY + itemHeight, 0x551E293B);
-            g.fill(startX + 14, itemY, startX + panelWidth - 14, itemY + 1, 0x44475569);
-            g.fill(startX + 14, itemY + itemHeight - 1, startX + panelWidth - 14, itemY + itemHeight, 0x44475569);
+            // 实心卡片背景与细边框
+            g.fill(startX + 14, itemY, startX + panelWidth - 14, itemY + itemHeight, 0xFF1E293B);
+            g.fill(startX + 14, itemY, startX + panelWidth - 14, itemY + 1, 0xFF475569);
+            g.fill(startX + 14, itemY + itemHeight - 1, startX + panelWidth - 14, itemY + itemHeight, 0xFF475569);
 
-            // 建筑名称
+            // 建筑名称 (带阴影，清晰锐利)
             g.drawString(font, "§f§l" + bp.name(), startX + 22, itemY + 6, 0xFFFFFFFF, true);
 
-            // 尺寸与体积
-            String info = String.format("§e尺寸: §7%s §8| §b作者: §7%s §8| §a大小: §7%.1f KB",
+            // 尺寸与体积 (高对比度)
+            String info = String.format("§e尺寸: §f%s §8| §b作者: §f%s §8| §a大小: §f%.1f KB",
                     bp.getDimensionsText(),
                     bp.author(),
                     bp.fileSizeBytes() / 1024.0
             );
-            g.drawString(font, info, startX + 22, itemY + 20, 0xFFAAAAAA, false);
+            g.drawString(font, info, startX + 22, itemY + 20, 0xFFE2E8F0, true);
 
             itemY += itemHeight + gap;
         }
 
-        // 分页指示
-        String pageStr = String.format("§7第 §e%d §7/ §e%d §7页 (共 %d 个建筑)", page + 1, maxPage + 1, blueprints.size());
-        g.drawCenteredString(font, pageStr, startX + panelWidth / 2, startY + contentHeight - 20, 0xFFCCCCCC);
+        // 分页指示 (带阴影)
+        String pageStr = String.format("§7第 §f%d §7/ §f%d §7页 (共 §e%d §7个建筑)", page + 1, maxPage + 1, blueprints.size());
+        g.drawString(font, pageStr, (startX + panelWidth / 2) - font.width(pageStr) / 2, startY + contentHeight - 20, 0xFFFFFFFF, true);
     }
 
     private void renderExportTab(GuiGraphics g, int startX, int startY, int panelWidth, int contentHeight) {
         BuildingSelectionManager bsm = BuildingSelectionManager.INSTANCE;
         if (!bsm.hasSelection()) {
-            g.drawCenteredString(font, "§c[未检测到有效框选区域]", startX + panelWidth / 2, startY + 40, 0xFFFF5555);
-            g.drawCenteredString(font, "§e请先手持【片场建筑蓝图仪】：", startX + panelWidth / 2, startY + 65, 0xFFFFFF55);
-            g.drawCenteredString(font, "§71. 左键点击方块设定角点 A", startX + panelWidth / 2, startY + 85, 0xFFAAAAAA);
-            g.drawCenteredString(font, "§72. 右键点击方块设定角点 B", startX + panelWidth / 2, startY + 105, 0xFFAAAAAA);
-            g.drawCenteredString(font, "§8框选出包围整个建筑的三维区域后，再回到此处即可一键打包！", startX + panelWidth / 2, startY + 130, 0xFF888888);
+            int cardX = startX + 20;
+            int cardY = startY + 16;
+            int cardW = panelWidth - 40;
+            int cardH = contentHeight - 24;
+
+            // 实心卡片底板与朱红警示边框，彻底告别文字发虚模糊
+            g.fill(cardX, cardY, cardX + cardW, cardY + cardH, 0xFF1E293B);
+            g.fill(cardX, cardY, cardX + cardW, cardY + 1, 0xFFEF4444);
+            g.fill(cardX, cardY + cardH - 1, cardX + cardW, cardY + cardH, 0xFFEF4444);
+            g.fill(cardX, cardY, cardX + 1, cardY + cardH, 0xFFEF4444);
+            g.fill(cardX + cardW - 1, cardY, cardX + cardW, cardY + cardH, 0xFFEF4444);
+
+            int cx = startX + panelWidth / 2;
+            int textY = cardY + 18;
+            g.drawString(font, "§c§l● 未检测到有效框选区域", cx - font.width("● 未检测到有效框选区域") / 2, textY, 0xFFFF5555, true);
+            textY += 24;
+
+            g.drawString(font, "§f请先手持 §e【片场建筑蓝图仪】§f 进行场景框选：", cardX + 24, textY, 0xFFFFFFFF, true);
+            textY += 18;
+
+            g.drawString(font, "§b1. 左键点击方块 §7— 锁定三维立体选区角点 A", cardX + 32, textY, 0xFFE0E7FF, true);
+            textY += 16;
+
+            g.drawString(font, "§b2. 右键点击方块 §7— 锁定三维立体选区角点 B", cardX + 32, textY, 0xFFE0E7FF, true);
+            textY += 22;
+
+            g.drawString(font, "§a★ 技巧：框选完整建筑后，回到此处即可一键打包导出为 .nbt 单文件！", cardX + 24, textY, 0xFF86EFAC, true);
             return;
         }
 
         Vec3i size = bsm.getSelectionSize();
         long volume = (long) size.getX() * size.getY() * size.getZ();
 
-        // 选区信息摘要
-        String summary = String.format("§6当前选区: §e%d × %d × %d §7(长×高×宽，共 %,d 方块)", size.getX(), size.getY(), size.getZ(), volume);
+        // 选区信息摘要 (高对比度带阴影)
+        String summary = String.format("§6当前选区: §e%d × %d × %d §7(长×高×宽，共 §a%,d §7方块)", size.getX(), size.getY(), size.getZ(), volume);
         g.drawString(font, summary, startX + 20, startY + 16, 0xFFFFFFFF, true);
 
-        // 标签文字
-        g.drawString(font, "§7建筑名称:", startX + 20, startY + 48, 0xFFCCCCCC, false);
-        g.drawString(font, "§7创作者:", startX + 20, startY + 74, 0xFFCCCCCC, false);
-        g.drawString(font, "§7描述说明:", startX + 20, startY + 100, 0xFFCCCCCC, false);
+        // 标签文字 (白色清晰带阴影)
+        g.drawString(font, "§f建筑名称:", startX + 20, startY + 48, 0xFFFFFFFF, true);
+        g.drawString(font, "§f创作者:", startX + 20, startY + 74, 0xFFFFFFFF, true);
+        g.drawString(font, "§f描述说明:", startX + 20, startY + 100, 0xFFFFFFFF, true);
     }
 
     @Override
