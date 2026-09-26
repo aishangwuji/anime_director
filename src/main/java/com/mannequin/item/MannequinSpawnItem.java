@@ -49,48 +49,15 @@ public final class MannequinSpawnItem extends Item {
 
         // 1. Shift + 右键方块：范围清场与轨迹联动清理
         if (player != null && player.isShiftKeyDown()) {
-            if (level.isClientSide()) {
-                ClientActionFacade.cleanupRangeTracks(clickedPos, 16.0);
-                return InteractionResult.SUCCESS;
-            }
-
-            ServerLevel serverLevel = (ServerLevel) level;
-            AABB area = new AABB(clickedPos).inflate(16.0);
-            List<MannequinEntity> list = level.getEntitiesOfClass(MannequinEntity.class, area);
-            int count = list.size();
-            for (MannequinEntity mannequin : list) {
-                serverLevel.sendParticles(ParticleTypes.POOF, mannequin.getX(), mannequin.getY() + 1.0, mannequin.getZ(), 8, 0.2, 0.5, 0.2, 0.05);
-                mannequin.discard();
-            }
-            if (count > 0) {
-                serverLevel.playSound(null, clickedPos, SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0F, 1.2F);
-                player.displayClientMessage(Component.literal("§e[导演工杖] 范围清场完成！已批量回收周围 §6" + count + " §e个人偶实体及轨迹"), true);
-            } else {
-                player.displayClientMessage(Component.literal("§7[导演工杖] 周围 16 格内未发现任何人偶实体"), true);
-            }
+            DirectorWandHelper.performRangeCleanup(level, player, clickedPos, 16.0);
             return InteractionResult.sidedSuccess(level.isClientSide());
         }
 
         // 2. 普通右键方块：生成 100% 标准基准人偶
-        if (level.isClientSide()) {
-            return InteractionResult.SUCCESS;
-        }
-
         BlockPos spawnPos = context.getClickedPos().relative(context.getClickedFace());
-        EntityType<MannequinEntity> type = ModEntityTypes.MANNEQUIN.get();
-        MannequinEntity mannequin = type.create(level);
-        if (mannequin == null) {
-            return InteractionResult.FAIL;
-        }
-
         float yaw = player != null ? player.getYRot() : 0.0F;
-        mannequin.moveTo(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, yaw, 0.0F);
-        level.addFreshEntity(mannequin);
-        level.playSound(null, spawnPos, SoundEvents.ARMOR_STAND_PLACE, SoundSource.PLAYERS, 1.0F, 1.0F);
-        if (player != null) {
-            player.displayClientMessage(Component.literal("§a[导演工杖] 已放置标准人偶 (100%)！右键人偶可缩放体型，Shift+右键可回收。"), true);
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        boolean ok = DirectorWandHelper.spawnMannequin(level, player, spawnPos, yaw);
+        return ok ? InteractionResult.sidedSuccess(level.isClientSide()) : InteractionResult.FAIL;
     }
 
     @Override
@@ -98,26 +65,7 @@ public final class MannequinSpawnItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
         // Shift + 右键空气：以玩家本体为中心 16 格范围清场
         if (player.isShiftKeyDown()) {
-            BlockPos playerPos = player.blockPosition();
-            if (level.isClientSide()) {
-                ClientActionFacade.cleanupRangeTracks(playerPos, 16.0);
-                return InteractionResultHolder.sidedSuccess(stack, true);
-            }
-
-            ServerLevel serverLevel = (ServerLevel) level;
-            AABB area = new AABB(playerPos).inflate(16.0);
-            List<MannequinEntity> list = level.getEntitiesOfClass(MannequinEntity.class, area);
-            int count = list.size();
-            for (MannequinEntity mannequin : list) {
-                serverLevel.sendParticles(ParticleTypes.POOF, mannequin.getX(), mannequin.getY() + 1.0, mannequin.getZ(), 8, 0.2, 0.5, 0.2, 0.05);
-                mannequin.discard();
-            }
-            if (count > 0) {
-                serverLevel.playSound(null, playerPos, SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0F, 1.2F);
-                player.displayClientMessage(Component.literal("§e[导演工杖] 范围清场完成！已批量回收周围 §6" + count + " §e个人偶实体及轨迹"), true);
-            } else {
-                player.displayClientMessage(Component.literal("§7[导演工杖] 周围 16 格内未发现任何人偶实体"), true);
-            }
+            DirectorWandHelper.performRangeCleanup(level, player, player.blockPosition(), 16.0);
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
         }
 

@@ -108,10 +108,9 @@ public final class CameraStationRenderer {
                 poseStack.pushPose();
                 poseStack.translate(pos.x - camPos.x, pos.y - camPos.y, pos.z - camPos.z);
 
-                // 核心镜头朝向旋转：
-                // Minecraft 相机朝向在 Yaw 0 时看向正南 (+Z)，向下旋转 Pitch，因此：
-                // Axis.YP.rotationDegrees(-station.yaw()) 搭配 Axis.XP.rotationDegrees(station.pitch())
-                // 使本地 +Z 轴与实际镜头视线正前方完全重合（消除之前 180° 朝后的问题）。
+                // 镜头三维朝向投影：
+                // Minecraft 相机视线定义为 Yaw 0 时指向正南 (+Z)，向下旋转 Pitch。
+                // 通过复合逆偏航角与俯仰角，将本地 +Z 轴准确映射至机位视锥投射方向。
                 poseStack.mulPose(Axis.YP.rotationDegrees(-station.yaw()));
                 poseStack.mulPose(Axis.XP.rotationDegrees(station.pitch()));
                 poseStack.mulPose(Axis.ZP.rotationDegrees(station.roll()));

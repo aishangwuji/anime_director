@@ -223,79 +223,48 @@ public final class StudioWorkspaceManager {
         savePreferences();
     }
 
-    private static Path getPrefsPath() {
-        try {
-            if (net.neoforged.fml.loading.FMLPaths.CONFIGDIR != null && net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get() != null) {
-                return net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("mannequin/client_prefs.nbt");
-            }
-        } catch (Throwable ignored) {
-        }
-        return java.nio.file.Paths.get("config/mannequin/client_prefs.nbt");
-    }
-
     public void loadPreferences() {
         try {
-            Path path = getPrefsPath();
-            if (path != null && Files.exists(path)) {
-                CompoundTag tag = NbtIo.readCompressed(path, NbtAccounter.unlimitedHeap());
-                if (tag.contains("workspaceMode")) {
-                    try {
-                        this.currentMode = Mode.valueOf(tag.getString("workspaceMode"));
-                    } catch (Exception ignored) {
-                    }
+            CompoundTag tag = com.mannequin.client.config.ClientPreferences.INSTANCE.getRoot();
+            if (tag.contains("workspaceMode")) {
+                try {
+                    this.currentMode = Mode.valueOf(tag.getString("workspaceMode"));
+                } catch (Exception ignored) {
                 }
-                if (tag.contains("cinematicAspectRatio")) {
-                    try {
-                        this.cinematicAspectRatio = AspectRatioMode.valueOf(tag.getString("cinematicAspectRatio"));
-                    } catch (Exception ignored) {
-                    }
+            }
+            if (tag.contains("cinematicAspectRatio")) {
+                try {
+                    this.cinematicAspectRatio = AspectRatioMode.valueOf(tag.getString("cinematicAspectRatio"));
+                } catch (Exception ignored) {
                 }
-                if (tag.contains("buildAspectRatio")) {
-                    try {
-                        this.buildAspectRatio = AspectRatioMode.valueOf(tag.getString("buildAspectRatio"));
-                    } catch (Exception ignored) {
-                    }
+            }
+            if (tag.contains("buildAspectRatio")) {
+                try {
+                    this.buildAspectRatio = AspectRatioMode.valueOf(tag.getString("buildAspectRatio"));
+                } catch (Exception ignored) {
                 }
-                if (tag.contains("cinematicHideGui")) {
-                    this.cinematicHideGui = tag.getBoolean("cinematicHideGui");
-                }
-                if (tag.contains("buildHideGui")) {
-                    this.buildHideGui = tag.getBoolean("buildHideGui");
-                }
-                if (tag.contains("cinematicHidePlayer")) {
-                    this.cinematicHidePlayer = tag.getBoolean("cinematicHidePlayer");
-                }
+            }
+            if (tag.contains("cinematicHideGui")) {
+                this.cinematicHideGui = tag.getBoolean("cinematicHideGui");
+            }
+            if (tag.contains("buildHideGui")) {
+                this.buildHideGui = tag.getBoolean("buildHideGui");
+            }
+            if (tag.contains("cinematicHidePlayer")) {
+                this.cinematicHidePlayer = tag.getBoolean("cinematicHidePlayer");
             }
         } catch (Throwable ignored) {
         }
     }
 
     public void savePreferences() {
-        java.util.concurrent.CompletableFuture.runAsync(() -> {
-            try {
-                Path path = getPrefsPath();
-                if (path != null) {
-                    if (path.getParent() != null) {
-                        Files.createDirectories(path.getParent());
-                    }
-                    CompoundTag tag = new CompoundTag();
-                    if (Files.exists(path)) {
-                        try {
-                            tag = NbtIo.readCompressed(path, NbtAccounter.unlimitedHeap());
-                        } catch (Exception ignored) {
-                            tag = new CompoundTag();
-                        }
-                    }
-                    tag.putString("workspaceMode", currentMode.name());
-                    tag.putString("cinematicAspectRatio", cinematicAspectRatio.name());
-                    tag.putString("buildAspectRatio", buildAspectRatio.name());
-                    tag.putBoolean("cinematicHideGui", cinematicHideGui);
-                    tag.putBoolean("buildHideGui", buildHideGui);
-                    tag.putBoolean("cinematicHidePlayer", cinematicHidePlayer);
-                    NbtIo.writeCompressed(tag, path);
-                }
-            } catch (Throwable ignored) {
-            }
+        com.mannequin.client.config.ClientPreferences.INSTANCE.updateRoot(tag -> {
+            tag.putString("workspaceMode", currentMode.name());
+            tag.putString("cinematicAspectRatio", cinematicAspectRatio.name());
+            tag.putString("buildAspectRatio", buildAspectRatio.name());
+            tag.putBoolean("cinematicHideGui", cinematicHideGui);
+            tag.putBoolean("buildHideGui", buildHideGui);
+            tag.putBoolean("cinematicHidePlayer", cinematicHidePlayer);
         });
     }
 }

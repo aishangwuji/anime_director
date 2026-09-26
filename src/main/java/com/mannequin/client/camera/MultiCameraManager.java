@@ -23,7 +23,17 @@ public final class MultiCameraManager {
 
     private final List<CameraStation> stations = new ArrayList<>();
     private int nextStationId = 1;
-    private File exportDirectory = new File(Minecraft.getInstance().gameDirectory, "videos/mannequin");
+    private static File getDefaultExportDir() {
+        try {
+            if (net.neoforged.fml.loading.FMLPaths.GAMEDIR != null && net.neoforged.fml.loading.FMLPaths.GAMEDIR.get() != null) {
+                return net.neoforged.fml.loading.FMLPaths.GAMEDIR.get().resolve("videos/mannequin").toFile();
+            }
+        } catch (Throwable ignored) {
+        }
+        return new File("videos/mannequin");
+    }
+
+    private File exportDirectory = getDefaultExportDir();
 
     private MultiCameraManager() {
     }

@@ -48,7 +48,21 @@ public final class Mp4VideoRecorder {
             f = NativeImage.class.getDeclaredField("pixels");
             f.setAccessible(true);
         } catch (Exception e) {
-            LOGGER.error("Failed to reflect NativeImage.pixels field", e);
+            // 容错与混淆保护：若 Mojang 重命名了 pixels 字段，自适应在 NativeImage 中搜寻唯一的 long 类型指针
+            for (Field field : NativeImage.class.getDeclaredFields()) {
+                if (field.getType() == long.class) {
+                    try {
+                        field.setAccessible(true);
+                        f = field;
+                        LOGGER.info("[MP4 Video Recorder] Discovered NativeImage pixels memory pointer field by type: {}", field.getName());
+                        break;
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+            if (f == null) {
+                LOGGER.warn("[MP4 Video Recorder] Unable to locate NativeImage pixels field, will fallback to PNG pipe", e);
+            }
         }
         PIXELS_FIELD = f;
     }
@@ -144,6 +158,21 @@ public final class Mp4VideoRecorder {
         // 优先使用 rawvideo 极速裸流模式，彻底杜绝主线程单帧 80ms 的 PNG 压缩开销
         this.useRawVideo = (PIXELS_FIELD != null && width > 0 && height > 0);
 
+        Minecraft mcInstance = Minecraft.getInstance();
+        if (!useRawVideo && mcInstance != null && mcInstance.player != null) {
+            mcInstance.player.displayClientMessage(
+                    Component.literal("§e[录像系统警告] 未获取到底层显存原生指针，已安全回退至图片通道模式（高分辨率下可能产生微幅卡顿）"),
+                    false
+            );
+        }
+
+        int inputW = width > 0 ? (width & ~1) : 1920;
+        int inputH = height > 0 ? (height & ~1) : 1080;
+
+        // 4K 与超高分辨率保护：将输出视频的最大边等比限制在 1920x1080 范围以内，避免 4K 巨额内存消耗与磁盘吞吐崩溃
+        // 同时确保缩放后的尺寸强制为偶数 (H.264 / yuv420p 要求)
+        String scaleFilter = "scale=trunc(min(1920\\,iw)/2)*2:trunc(min(1080\\,ih)/2)*2";
+
         ProcessBuilder pb;
         if (useRawVideo) {
             pb = new ProcessBuilder(
@@ -152,9 +181,9 @@ public final class Mp4VideoRecorder {
                     "-framerate", String.valueOf(fps),
                     "-f", "rawvideo",
                     "-pix_fmt", "rgba",
-                    "-s", width + "x" + height,
+                    "-s", inputW + "x" + inputH,
                     "-i", "-",
-                    "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+                    "-vf", scaleFilter,
                     "-c:v", "libx264",
                     "-pix_fmt", "yuv420p",
                     "-preset", "ultrafast",
@@ -170,7 +199,7 @@ public final class Mp4VideoRecorder {
                     "-f", "image2pipe",
                     "-c:v", "png",
                     "-i", "-",
-                    "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+                    "-vf", scaleFilter,
                     "-c:v", "libx264",
                     "-pix_fmt", "yuv420p",
                     "-preset", "ultrafast",

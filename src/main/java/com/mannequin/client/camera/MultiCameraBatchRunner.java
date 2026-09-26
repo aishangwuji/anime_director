@@ -42,9 +42,6 @@ public final class MultiCameraBatchRunner {
         FINISHED
     }
 
-    private static final java.nio.file.Path PREFS_PATH =
-            net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("mannequin/client_prefs.nbt");
-
     private Status status = Status.IDLE;
     private final List<CameraStation> queue = new ArrayList<>();
     private int currentStationIndex = 0;
@@ -67,38 +64,21 @@ public final class MultiCameraBatchRunner {
 
     public void loadPreferences() {
         try {
-            if (java.nio.file.Files.exists(PREFS_PATH)) {
-                net.minecraft.nbt.CompoundTag tag = net.minecraft.nbt.NbtIo.readCompressed(PREFS_PATH, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
-                if (tag.contains("cleanFeedEnabled")) {
-                    this.cleanFeedEnabled = tag.getBoolean("cleanFeedEnabled");
-                }
-                if (tag.contains("recordingFps")) {
-                    this.recordingFps = tag.getInt("recordingFps");
-                }
+            net.minecraft.nbt.CompoundTag tag = com.mannequin.client.config.ClientPreferences.INSTANCE.getRoot();
+            if (tag.contains("cleanFeedEnabled")) {
+                this.cleanFeedEnabled = tag.getBoolean("cleanFeedEnabled");
+            }
+            if (tag.contains("recordingFps")) {
+                this.recordingFps = tag.getInt("recordingFps");
             }
         } catch (Exception ignored) {
         }
     }
 
     public void savePreferences() {
-        java.util.concurrent.CompletableFuture.runAsync(() -> {
-            try {
-                if (PREFS_PATH.getParent() != null) {
-                    java.nio.file.Files.createDirectories(PREFS_PATH.getParent());
-                }
-                net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
-                if (java.nio.file.Files.exists(PREFS_PATH)) {
-                    try {
-                        tag = net.minecraft.nbt.NbtIo.readCompressed(PREFS_PATH, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
-                    } catch (Exception ignored) {
-                        tag = new net.minecraft.nbt.CompoundTag();
-                    }
-                }
-                tag.putBoolean("cleanFeedEnabled", cleanFeedEnabled);
-                tag.putInt("recordingFps", recordingFps);
-                net.minecraft.nbt.NbtIo.writeCompressed(tag, PREFS_PATH);
-            } catch (Exception ignored) {
-            }
+        com.mannequin.client.config.ClientPreferences.INSTANCE.updateRoot(tag -> {
+            tag.putBoolean("cleanFeedEnabled", cleanFeedEnabled);
+            tag.putInt("recordingFps", recordingFps);
         });
     }
 

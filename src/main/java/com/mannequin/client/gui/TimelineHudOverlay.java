@@ -35,53 +35,31 @@ public final class TimelineHudOverlay implements LayeredDraw.Layer {
         loadPreferences();
     }
 
-    private static java.nio.file.Path getPrefsPath() {
-        try {
-            if (net.neoforged.fml.loading.FMLPaths.CONFIGDIR != null && net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get() != null) {
-                return net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("mannequin/client_prefs.nbt");
-            }
-        } catch (Throwable ignored) {
-        }
-        return java.nio.file.Paths.get("config/mannequin/client_prefs.nbt");
-    }
-
     public void loadPreferences() {
         try {
-            java.nio.file.Path path = getPrefsPath();
-            if (path != null && java.nio.file.Files.exists(path)) {
-                net.minecraft.nbt.CompoundTag tag = net.minecraft.nbt.NbtIo.readCompressed(path, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
-                if (tag.contains("tipsDismissed")) {
-                    boolean dismissed = tag.getBoolean("tipsDismissed");
-                    this.showGuideCard = !dismissed;
-                    this.showSituationalTip = !dismissed;
-                }
-                if (tag.contains("showGuideCard")) {
-                    this.showGuideCard = tag.getBoolean("showGuideCard");
-                }
-                if (tag.contains("showSituationalTip")) {
-                    this.showSituationalTip = tag.getBoolean("showSituationalTip");
-                }
+            net.minecraft.nbt.CompoundTag tag = com.mannequin.client.config.ClientPreferences.INSTANCE.getRoot();
+            if (tag.contains("tipsDismissed")) {
+                boolean dismissed = tag.getBoolean("tipsDismissed");
+                this.showGuideCard = !dismissed;
+                this.showSituationalTip = !dismissed;
+            }
+            if (tag.contains("showGuideCard")) {
+                this.showGuideCard = tag.getBoolean("showGuideCard");
+            }
+            if (tag.contains("showSituationalTip")) {
+                this.showSituationalTip = tag.getBoolean("showSituationalTip");
             }
         } catch (Throwable ignored) {
         }
     }
 
     public void savePreferences() {
-        try {
-            java.nio.file.Path path = getPrefsPath();
-            if (path != null) {
-                if (path.getParent() != null) {
-                    java.nio.file.Files.createDirectories(path.getParent());
-                }
-                net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
-                boolean dismissed = !areTipsVisible();
-                tag.putBoolean("tipsDismissed", dismissed);
-                tag.putBoolean("showGuideCard", showGuideCard);
-                tag.putBoolean("showSituationalTip", showSituationalTip);
-                net.minecraft.nbt.NbtIo.writeCompressed(tag, path);
-            }
-        } catch (Throwable ignored) {
-        }
+        com.mannequin.client.config.ClientPreferences.INSTANCE.updateRoot(tag -> {
+            boolean dismissed = !areTipsVisible();
+            tag.putBoolean("tipsDismissed", dismissed);
+            tag.putBoolean("showGuideCard", showGuideCard);
+            tag.putBoolean("showSituationalTip", showSituationalTip);
+        });
     }
 
     public AspectRatioMode getAspectRatioMode() {

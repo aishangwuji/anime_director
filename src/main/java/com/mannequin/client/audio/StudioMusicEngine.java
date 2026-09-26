@@ -536,35 +536,22 @@ public final class StudioMusicEngine {
 
     // ==================== 偏好持久化 ====================
 
-    private static Path getPrefsPath() {
-        try {
-            if (FMLPaths.CONFIGDIR != null && FMLPaths.CONFIGDIR.get() != null) {
-                return FMLPaths.CONFIGDIR.get().resolve("mannequin/client_prefs.nbt");
-            }
-        } catch (Throwable ignored) {
-        }
-        return Paths.get("config/mannequin/client_prefs.nbt");
-    }
-
     public void loadPreferences() {
         try {
-            Path path = getPrefsPath();
-            if (path != null && Files.exists(path)) {
-                CompoundTag tag = NbtIo.readCompressed(path, NbtAccounter.unlimitedHeap());
-                if (tag.contains("musicDirectory")) {
-                    String customDir = tag.getString("musicDirectory");
-                    if (!customDir.isBlank()) {
-                        this.musicDirectory = Paths.get(customDir);
-                    }
+            CompoundTag tag = com.mannequin.client.config.ClientPreferences.INSTANCE.getRoot();
+            if (tag.contains("musicDirectory")) {
+                String customDir = tag.getString("musicDirectory");
+                if (!customDir.isBlank()) {
+                    this.musicDirectory = Paths.get(customDir);
                 }
-                if (tag.contains("musicVolume")) {
-                    this.volume = Math.max(0.0F, Math.min(1.0F, tag.getFloat("musicVolume")));
-                }
-                if (tag.contains("musicLoopMode")) {
-                    try {
-                        this.loopMode = LoopMode.valueOf(tag.getString("musicLoopMode"));
-                    } catch (Exception ignored) {
-                    }
+            }
+            if (tag.contains("musicVolume")) {
+                this.volume = Math.max(0.0F, Math.min(1.0F, tag.getFloat("musicVolume")));
+            }
+            if (tag.contains("musicLoopMode")) {
+                try {
+                    this.loopMode = LoopMode.valueOf(tag.getString("musicLoopMode"));
+                } catch (Exception ignored) {
                 }
             }
         } catch (Throwable ignored) {
@@ -572,28 +559,10 @@ public final class StudioMusicEngine {
     }
 
     public void savePreferences() {
-        CompletableFuture.runAsync(() -> {
-            try {
-                Path path = getPrefsPath();
-                if (path != null) {
-                    if (path.getParent() != null) {
-                        Files.createDirectories(path.getParent());
-                    }
-                    CompoundTag tag = new CompoundTag();
-                    if (Files.exists(path)) {
-                        try {
-                            tag = NbtIo.readCompressed(path, NbtAccounter.unlimitedHeap());
-                        } catch (Exception ignored) {
-                            tag = new CompoundTag();
-                        }
-                    }
-                    tag.putString("musicDirectory", musicDirectory.toAbsolutePath().toString());
-                    tag.putFloat("musicVolume", volume);
-                    tag.putString("musicLoopMode", loopMode.name());
-                    NbtIo.writeCompressed(tag, path);
-                }
-            } catch (Throwable ignored) {
-            }
+        com.mannequin.client.config.ClientPreferences.INSTANCE.updateRoot(tag -> {
+            tag.putString("musicDirectory", musicDirectory.toAbsolutePath().toString());
+            tag.putFloat("musicVolume", volume);
+            tag.putString("musicLoopMode", loopMode.name());
         });
     }
 }

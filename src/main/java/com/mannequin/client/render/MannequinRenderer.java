@@ -41,24 +41,14 @@ public class MannequinRenderer extends EntityRenderer<MannequinEntity> {
         float limbSwingAmount = entity.getLimbSwingAmount(partialTick);
         this.model.setupAnim(entity, limbSwing, limbSwingAmount, entity.tickCount + partialTick, 0.0F, entity.getXRot());
 
-        VertexConsumer buffer = bufferSource.getBuffer(renderType(entity));
-        this.model.renderToBuffer(poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY,
+        int effectiveLight = entity.isUnlit() ? net.minecraft.client.renderer.LightTexture.FULL_BRIGHT : packedLight;
+        VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityCutout(TEXTURE));
+        this.model.renderToBuffer(poseStack, buffer, effectiveLight, OverlayTexture.NO_OVERLAY,
                 entity.getColor().argb());
         poseStack.popPose();
 
-        this.shadowRadius = 0.5F * scale;
+        this.shadowRadius = entity.isUnlit() ? 0.0F : (0.5F * scale);
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
-    }
-
-    private static RenderType renderType(MannequinEntity entity) {
-        // Reason: emissive is the only vanilla entity render type that skips the
-        // lightmap, which is exactly the "unlit flat color" mode. It lives in the
-        // translucency pass, so the alpha in the vertex color is kept at full to
-        // keep the body visually opaque. The shaded mode uses the standard
-        // cutout pass so scene lighting still models the volume.
-        return entity.isUnlit()
-                ? RenderType.entityTranslucentEmissive(TEXTURE)
-                : RenderType.entityCutout(TEXTURE);
     }
 
     @Override

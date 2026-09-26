@@ -98,7 +98,11 @@ public class MannequinEntity extends Entity {
     public void setScale(float scale) {
         float clamped = Math.max(0.1F, Math.min(20.0F, scale));
         entityData.set(DATA_SCALE, clamped);
+        double oldX = getX();
+        double oldY = getY();
+        double oldZ = getZ();
         this.refreshDimensions();
+        this.setPos(oldX, oldY, oldZ);
     }
 
     /**
@@ -192,17 +196,7 @@ public class MannequinEntity extends Entity {
                 || stack.is(com.mannequin.registry.ModItems.MANNEQUIN_REMOVER.get());
 
         if (isDirectorWand) {
-            // 右键人偶：安全回收此人偶实体并清除其运动轨迹！
-            if (!level().isClientSide()) {
-                discard();
-                level().playSound(null, getX(), getY(), getZ(), net.minecraft.sounds.SoundEvents.ITEM_BREAK, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.2F);
-                if (level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                    serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, getX(), getY() + 1.0, getZ(), 10, 0.2, 0.5, 0.2, 0.05);
-                }
-                player.displayClientMessage(net.minecraft.network.chat.Component.literal("§e[导演工杖] 已回收该人偶并清理其运动轨迹！"), true);
-            } else {
-                ClientRemovalHelper.cleanupTrack(getUUID().toString());
-            }
+            com.mannequin.item.DirectorWandHelper.recycleMannequin(this, player);
             return InteractionResult.sidedSuccess(level().isClientSide());
         }
 
@@ -240,23 +234,34 @@ public class MannequinEntity extends Entity {
         return super.interact(player, hand);
     }
 
-    /**
-     * 玩家徒手或使用武器左键击打人偶时将其击碎回收（类似盔甲架）。
-     */
     @Override
     public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
-        if (!level().isClientSide() && !isRemoved()) {
-            discard();
-            level().playSound(null, getX(), getY(), getZ(), net.minecraft.sounds.SoundEvents.ITEM_BREAK, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
-            if (level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, getX(), getY() + 1.0, getZ(), 10, 0.2, 0.5, 0.2, 0.05);
-            }
-            if (source.getEntity() instanceof Player player && !player.getAbilities().instabuild) {
+        if (isRemoved()) {
+            return false;
+        }
+        // 片场防护：仅玩家攻击、虚空或爆炸可击碎/回收人偶，免疫骷髅箭矢等非玩家意外怪伤
+        boolean isPlayerAttack = source.getEntity() instanceof Player;
+        boolean isCreativeOrDestructive = source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)
+                || source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION);
+
+        if (!isPlayerAttack && !isCreativeOrDestructive) {
+            return false;
+        }
+
+        if (!level().isClientSide()) {
+            if (source.getEntity() instanceof Player player) {
+                com.mannequin.item.DirectorWandHelper.recycleMannequin(this, player);
+            } else {
+                discard();
+                level().playSound(null, getX(), getY(), getZ(), net.minecraft.sounds.SoundEvents.ITEM_BREAK, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+                if (level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                    serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, getX(), getY() + 1.0, getZ(), 10, 0.2, 0.5, 0.2, 0.05);
+                }
                 spawnAtLocation(com.mannequin.registry.ModItems.MANNEQUIN_SPAWN.get());
             }
             return true;
         }
-        return false;
+        return true;
     }
 
     @Override

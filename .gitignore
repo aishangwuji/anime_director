@@ -15,7 +15,7 @@ Thumbs.db
 # Mod dev caches
 run/
 logs/
-config/
+/config/
 
 # Test media
 *.mp4

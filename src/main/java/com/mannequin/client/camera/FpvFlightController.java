@@ -60,74 +60,43 @@ public final class FpvFlightController {
         loadPreferences();
     }
 
-    private static java.nio.file.Path getPrefsPath() {
-        try {
-            if (net.neoforged.fml.loading.FMLPaths.CONFIGDIR != null && net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get() != null) {
-                return net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("mannequin/client_prefs.nbt");
-            }
-        } catch (Throwable ignored) {
-        }
-        return java.nio.file.Paths.get("config/mannequin/client_prefs.nbt");
-    }
-
     public void loadPreferences() {
         try {
-            java.nio.file.Path path = getPrefsPath();
-            if (path != null && java.nio.file.Files.exists(path)) {
-                net.minecraft.nbt.CompoundTag tag = net.minecraft.nbt.NbtIo.readCompressed(path, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
-                if (tag.contains("cameraFlightStyle")) {
-                    String styleName = tag.getString("cameraFlightStyle");
-                    try {
-                        this.flightStyle = CameraFlightStyle.valueOf(styleName);
-                    } catch (IllegalArgumentException ignored) {
-                    }
+            net.minecraft.nbt.CompoundTag tag = com.mannequin.client.config.ClientPreferences.INSTANCE.getRoot();
+            if (tag.contains("cameraFlightStyle")) {
+                String styleName = tag.getString("cameraFlightStyle");
+                try {
+                    this.flightStyle = CameraFlightStyle.valueOf(styleName);
+                } catch (IllegalArgumentException ignored) {
                 }
-                if (tag.contains("speedGear")) {
-                    try {
-                        this.speedGear = SpeedGear.valueOf(tag.getString("speedGear"));
-                        this.maxSpeed = this.speedGear.getSpeed();
-                    } catch (IllegalArgumentException ignored) {
-                    }
+            }
+            if (tag.contains("speedGear")) {
+                try {
+                    this.speedGear = SpeedGear.valueOf(tag.getString("speedGear"));
+                    this.maxSpeed = this.speedGear.getSpeed();
+                } catch (IllegalArgumentException ignored) {
                 }
-                if (tag.contains("maxSpeed")) {
-                    this.maxSpeed = Math.max(0.2, Math.min(30.0, tag.getDouble("maxSpeed")));
-                }
-                if (tag.contains("stabilizationStrength")) {
-                    this.stabilizationStrength = Math.max(0.0, Math.min(1.0, tag.getDouble("stabilizationStrength")));
-                }
-                if (tag.contains("altCreepMultiplier")) {
-                    this.altCreepMultiplier = tag.getDouble("altCreepMultiplier");
-                }
+            }
+            if (tag.contains("maxSpeed")) {
+                this.maxSpeed = Math.max(0.2, Math.min(30.0, tag.getDouble("maxSpeed")));
+            }
+            if (tag.contains("stabilizationStrength")) {
+                this.stabilizationStrength = Math.max(0.0, Math.min(1.0, tag.getDouble("stabilizationStrength")));
+            }
+            if (tag.contains("altCreepMultiplier")) {
+                this.altCreepMultiplier = tag.getDouble("altCreepMultiplier");
             }
         } catch (Exception ignored) {
         }
     }
 
     public void savePreferences() {
-        java.util.concurrent.CompletableFuture.runAsync(() -> {
-            try {
-                java.nio.file.Path path = getPrefsPath();
-                if (path != null) {
-                    if (path.getParent() != null) {
-                        java.nio.file.Files.createDirectories(path.getParent());
-                    }
-                    net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
-                    if (java.nio.file.Files.exists(path)) {
-                        try {
-                            tag = net.minecraft.nbt.NbtIo.readCompressed(path, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
-                        } catch (Exception ignored) {
-                            tag = new net.minecraft.nbt.CompoundTag();
-                        }
-                    }
-                    tag.putString("cameraFlightStyle", flightStyle.name());
-                    tag.putString("speedGear", speedGear.name());
-                    tag.putDouble("maxSpeed", maxSpeed);
-                    tag.putDouble("stabilizationStrength", stabilizationStrength);
-                    tag.putDouble("altCreepMultiplier", altCreepMultiplier);
-                    net.minecraft.nbt.NbtIo.writeCompressed(tag, path);
-                }
-            } catch (Exception ignored) {
-            }
+        com.mannequin.client.config.ClientPreferences.INSTANCE.updateRoot(tag -> {
+            tag.putString("cameraFlightStyle", flightStyle.name());
+            tag.putString("speedGear", speedGear.name());
+            tag.putDouble("maxSpeed", maxSpeed);
+            tag.putDouble("stabilizationStrength", stabilizationStrength);
+            tag.putDouble("altCreepMultiplier", altCreepMultiplier);
         });
     }
 
@@ -532,17 +501,18 @@ public final class FpvFlightController {
         double newY = current.y + move.y;
         double newZ = current.z + move.z;
 
-        // 1. 水平轴防穿墙 (分轴推进并支持贴墙滑动，撞墙直接阻停水平移动，绝不抬升相机)
+        // 1. 水平轴防穿墙 (分轴推进并支持贴墙滑动，撞墙直接阻停水平移动，保留沿墙切向动量)
+        double camSize = microMode ? 0.15 : 0.30;
         if (move.x != 0) {
-            BlockPos posCheckX = BlockPos.containing(newX, current.y, current.z);
-            if (!isPassable(level, posCheckX)) {
+            net.minecraft.world.phys.AABB boxX = net.minecraft.world.phys.AABB.ofSize(new Vec3(newX, current.y, current.z), camSize, camSize, camSize);
+            if (!isAabbPassable(level, boxX)) {
                 newX = current.x;
                 velocity = new Vec3(0, velocity.y, velocity.z);
             }
         }
         if (move.z != 0) {
-            BlockPos posCheckZ = BlockPos.containing(newX, current.y, newZ);
-            if (!isPassable(level, posCheckZ)) {
+            net.minecraft.world.phys.AABB boxZ = net.minecraft.world.phys.AABB.ofSize(new Vec3(newX, current.y, newZ), camSize, camSize, camSize);
+            if (!isAabbPassable(level, boxZ)) {
                 newZ = current.z;
                 velocity = new Vec3(velocity.x, velocity.y, 0);
             }
@@ -556,6 +526,9 @@ public final class FpvFlightController {
 
         for (int y = startScanY; y >= Math.max(level.getMinBuildHeight(), endScanY); y--) {
             BlockPos floorPos = new BlockPos((int) Math.floor(newX), y, (int) Math.floor(newZ));
+            if (!level.isLoaded(floorPos)) {
+                break;
+            }
             BlockState state = level.getBlockState(floorPos);
             VoxelShape shape = state.getCollisionShape(level, floorPos);
             if (!shape.isEmpty()) {
@@ -585,9 +558,18 @@ public final class FpvFlightController {
         return new Vec3(newX, newY, newZ);
     }
 
-    private boolean isPassable(Level level, BlockPos pos) {
-        if (!level.isLoaded(pos)) return true;
-        BlockState state = level.getBlockState(pos);
-        return state.getCollisionShape(level, pos).isEmpty();
+    private boolean isAabbPassable(Level level, net.minecraft.world.phys.AABB aabb) {
+        int minChunkX = net.minecraft.core.SectionPos.blockToSectionCoord((int) Math.floor(aabb.minX));
+        int maxChunkX = net.minecraft.core.SectionPos.blockToSectionCoord((int) Math.floor(aabb.maxX));
+        int minChunkZ = net.minecraft.core.SectionPos.blockToSectionCoord((int) Math.floor(aabb.minZ));
+        int maxChunkZ = net.minecraft.core.SectionPos.blockToSectionCoord((int) Math.floor(aabb.maxZ));
+        for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+            for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                if (!level.hasChunk(cx, cz)) {
+                    return false; // 未加载区块严格禁止穿入，彻底解决飞入未渲染区域穿墙瞬移问题
+                }
+            }
+        }
+        return level.noCollision(null, aabb);
     }
 }
