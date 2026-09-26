@@ -59,6 +59,56 @@ public final class MannequinMod {
                         }
                     });
                 }
+        ).playToServer(
+                com.mannequin.network.ExportBuildingPayload.TYPE,
+                com.mannequin.network.ExportBuildingPayload.STREAM_CODEC,
+                (payload, context) -> {
+                    context.enqueueWork(() -> {
+                        net.minecraft.world.entity.player.Player player = context.player();
+                        if (player != null && player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                            net.minecraft.nbt.CompoundTag tag = com.mannequin.building.BuildingBlueprintHelper.exportBuilding(
+                                    serverLevel, payload.posA(), payload.posB(), payload.name(), payload.author(), payload.description()
+                            );
+                            boolean ok = com.mannequin.building.BuildingBlueprintHelper.saveBlueprintFile(payload.fileName(), tag);
+                            if (ok) {
+                                player.displayClientMessage(
+                                        net.minecraft.network.chat.Component.literal("§a[建筑蓝图] 建筑「" + payload.name() + "」已成功打包导出至 config/mannequin/blueprints/" + payload.fileName() + "!"),
+                                        false
+                                );
+                            } else {
+                                player.displayClientMessage(
+                                        net.minecraft.network.chat.Component.literal("§c[建筑蓝图] 保存文件失败，请检查文件名与写入权限！"),
+                                        false
+                                );
+                            }
+                        }
+                    });
+                }
+        ).playToServer(
+                com.mannequin.network.PlaceBuildingPayload.TYPE,
+                com.mannequin.network.PlaceBuildingPayload.STREAM_CODEC,
+                (payload, context) -> {
+                    context.enqueueWork(() -> {
+                        net.minecraft.world.entity.player.Player player = context.player();
+                        if (player != null && player.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                            boolean ok = com.mannequin.building.BuildingBlueprintHelper.placeBuilding(
+                                    serverLevel, payload.targetOrigin(), payload.fileName(), payload.rotationDegrees()
+                            );
+                            if (ok) {
+                                serverLevel.playSound(null, payload.targetOrigin(), net.minecraft.sounds.SoundEvents.ANVIL_USE, net.minecraft.sounds.SoundSource.BLOCKS, 0.8F, 1.1F);
+                                player.displayClientMessage(
+                                        net.minecraft.network.chat.Component.literal("§a[建筑蓝图] 建筑已成功一键部署生成于片场！"),
+                                        true
+                                );
+                            } else {
+                                player.displayClientMessage(
+                                        net.minecraft.network.chat.Component.literal("§c[建筑蓝图] 部署失败：未找到蓝图文件 " + payload.fileName() + " 或数据损坏！"),
+                                        true
+                                );
+                            }
+                        }
+                    });
+                }
         );
     }
 

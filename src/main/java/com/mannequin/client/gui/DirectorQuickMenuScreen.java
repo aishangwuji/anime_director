@@ -342,15 +342,16 @@ public class DirectorQuickMenuScreen extends Screen {
                 .tooltip(Tooltip.create(Component.literal("§e导播多机位监视大厅\n§7总览所有分镜机位，一键切入沉浸试看与动作排演联动，\n支持机位重命名、覆盖更新与批量录制")))
                 .build());
 
-        // 17. 录制当前机位/单机位排演
+        // 17. 片场建筑蓝图库与置景工场
         addRenderableWidget(Button.builder(
-                Component.literal("🎬 录当前机位"),
+                Component.literal("🏛 建筑蓝图"),
                 btn -> {
-                    onClose();
-                    batchRunner.startSingleStationRecording(null);
+                    if (minecraft != null) {
+                        minecraft.setScreen(new BuildingLibraryScreen());
+                    }
                 })
                 .bounds(gridStartX + btnWidth + gapX, r5Y, btnWidth, btnHeight)
-                .tooltip(Tooltip.create(Component.literal("§6★ 单机位排演录制 (直出 MP4)\n§7针对当前所选机位或试看构图视角，自动倒带并开启录制演播，\n录制完成后自动生成真实标准的 H.264 MP4 视频！")))
+                .tooltip(Tooltip.create(Component.literal("§e🏛 片场建筑蓝图库与置景工场\n§7纯建筑方块与结构打包、导出为 .nbt 文件，\n或在蓝图库中一键全息预览并落地生成！\n支持一键打开本地文件夹直接导入好友分享的建筑")))
                 .build());
 
         // 18. 纯净片场史莱姆力场开关

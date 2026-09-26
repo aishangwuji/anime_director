@@ -32,6 +32,12 @@ public final class ModItems {
     public static final DeferredItem<Item> DIRECTOR_GUIDEBOOK =
             ITEMS.register("director_guidebook", () -> new com.mannequin.item.DirectorGuidebookItem(new Item.Properties().stacksTo(1)));
 
+    /**
+     * 漫剧片场建筑蓝图仪道具。
+     */
+    public static final DeferredItem<Item> BUILD_WAND =
+            ITEMS.register("build_wand", () -> new com.mannequin.item.BuildWandItem(new Item.Properties().stacksTo(1)));
+
     private ModItems() {
     }
 
@@ -45,6 +51,7 @@ public final class ModItems {
             event.accept(MANNEQUIN_SPAWN);
             event.accept(MANNEQUIN_REMOVER);
             event.accept(DIRECTOR_GUIDEBOOK);
+            event.accept(BUILD_WAND);
         }
     }
 }
