@@ -22,6 +22,14 @@ public final class ModKeyMappings {
             CATEGORY_MANNEQUIN
     );
 
+    /** 一键在「场景搭建模式」与「运镜实拍模式」之间原子级切换（默认 F4 键） */
+    public static final KeyMapping TOGGLE_WORKSPACE_MODE = new KeyMapping(
+            "key.mannequin.toggle_workspace_mode",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_F4,
+            CATEGORY_MANNEQUIN
+    );
+
     /** 在当前位置打下一个机位关键帧 / 开启附身动捕录制 */
     public static final KeyMapping ADD_KEYFRAME = new KeyMapping(
             "key.mannequin.add_keyframe",
@@ -200,6 +208,7 @@ public final class ModKeyMappings {
      */
     public static void register(RegisterKeyMappingsEvent event) {
         event.register(TOGGLE_CAMERA);
+        event.register(TOGGLE_WORKSPACE_MODE);
         event.register(ADD_KEYFRAME);
         event.register(START_DOLLY);
         event.register(RESET_DOLLY);

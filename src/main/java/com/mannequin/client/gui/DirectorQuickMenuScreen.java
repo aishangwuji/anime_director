@@ -47,6 +47,22 @@ public class DirectorQuickMenuScreen extends Screen {
         MultiCameraBatchRunner batchRunner = MultiCameraBatchRunner.INSTANCE;
         FpvFlightController flight = FpvFlightController.INSTANCE;
 
+        // 顶部工作区模式切换按钮 [🔨搭建 / 🎬实拍 (F4)]
+        com.mannequin.client.studio.StudioWorkspaceManager workspace = com.mannequin.client.studio.StudioWorkspaceManager.INSTANCE;
+        com.mannequin.client.studio.StudioWorkspaceManager.Mode currentWorkspaceMode = workspace.getCurrentMode();
+        addRenderableWidget(Button.builder(
+                Component.literal(currentWorkspaceMode.getIcon() + " " + currentWorkspaceMode.getDisplayName() + " [F4]"),
+                btn -> {
+                    workspace.toggleMode();
+                    rebuildWidgets();
+                })
+                .bounds(startX + panelWidth - 324, startY + 4, 120, 18)
+                .tooltip(Tooltip.create(Component.literal("§e[F4] 一键切换片场工作区模式\n" +
+                        "§6[🔨 场景搭建]：锁定玩家视角，显示原生物品栏/准星/HUD，全屏无遮罩搭建\n" +
+                        "§b[🎬 运镜实拍]：切入上帝/穿越机自由运镜，全屏纯净无UI，应用电影宽画幅\n" +
+                        "§7★ 白纸化自适应记忆：您在各模式下微调的画幅和参数将全自动保存")))
+                .build());
+
         // 顶部右上角工具栏：导演手册 (H)
         addRenderableWidget(Button.builder(Component.literal("📖 手册"), btn -> {
             if (minecraft != null) {
@@ -423,11 +439,13 @@ public class DirectorQuickMenuScreen extends Screen {
             MultiCameraManager mcm = MultiCameraManager.INSTANCE;
             MasterClockEngine mce = MasterClockEngine.INSTANCE;
             FpvFlightController flight = FpvFlightController.INSTANCE;
-            String status = String.format("§7机位: §e%d个 §8| 航速: §e%.1fm/s §8| 防抖: §a%d%% §8| 风格: §6%s §8| 速率: §b%.2fx §8| 时长: §d%.1fs",
+            com.mannequin.client.studio.StudioWorkspaceManager.Mode wsMode = com.mannequin.client.studio.StudioWorkspaceManager.INSTANCE.getCurrentMode();
+            String status = String.format("§7工作区: §e%s%s §8| 机位: §e%d个 §8| 航速: §e%.1fm/s §8| 防抖: §a%d%% §8| 速率: §b%.2fx §8| 时长: §d%.1fs",
+                    wsMode.getIcon(),
+                    wsMode.getDisplayName(),
                     mcm.getStations().size(),
                     flight.getSpeed(),
                     (int) Math.round(flight.getStabilizationStrength() * 100.0),
-                    flight.getFlightStyle().getDisplayName(),
                     mce.getTimeScaleValue(),
                     mce.getTotalDurationSeconds()
             );

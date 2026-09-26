@@ -26,5 +26,6 @@
   "key.mannequin.record_live_pov": "Toggle Live POV Video Recording (Default F10)",
   "key.mannequin.cycle_speed_gear": "Cycle Camera Flight Speed Gear (Default J)",
   "key.mannequin.quick_menu": "Open Director Quick Menu (Default C)",
-  "key.mannequin.add_camera_station": "Add Camera Station (Default B)"
+  "key.mannequin.add_camera_station": "Add Camera Station (Default B)",
+  "key.mannequin.toggle_workspace_mode": "Toggle Studio Build / Cinematic Shoot Mode (Default F4)"
 }

@@ -348,6 +348,11 @@ public final class DirectorCameraController {
             toggleCamera();
         }
 
+        // 一键在「场景搭建模式」与「运镜实拍模式」之间原子级切换 (F4 键)
+        if (ModKeyMappings.TOGGLE_WORKSPACE_MODE.consumeClick()) {
+            com.mannequin.client.studio.StudioWorkspaceManager.INSTANCE.toggleMode();
+        }
+
         // 切换附身受控人偶/载具 (G 键)
         if (ModKeyMappings.TOGGLE_POSSESSION.consumeClick()) {
             PuppeteerController.INSTANCE.togglePossession();

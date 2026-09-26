@@ -90,10 +90,11 @@ public final class TimelineHudOverlay implements LayeredDraw.Layer {
 
     public void setAspectRatioMode(AspectRatioMode mode) {
         this.aspectRatioMode = mode;
+        com.mannequin.client.studio.StudioWorkspaceManager.INSTANCE.onAspectRatioChanged(mode);
     }
 
     public void toggleAspectRatio() {
-        this.aspectRatioMode = this.aspectRatioMode.next();
+        setAspectRatioMode(this.aspectRatioMode.next());
     }
 
     public boolean isShowThirdsGrid() {
