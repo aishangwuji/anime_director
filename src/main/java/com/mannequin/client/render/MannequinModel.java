@@ -359,6 +359,96 @@ public class MannequinModel extends EntityModel<MannequinEntity> {
                 this.leftLeg.zRot = -0.3F;
                 this.leftShin.xRot = 0.2F;
             }
+            case LYING -> {
+                // 仰面平躺：骨盆贴地，躯干水平仰卧，四肢自然伸展放松
+                this.pelvis.y = PELVIS_DEFAULT_Y + 7.5F; // 贴紧地面
+                this.pelvis.xRot = -1.57F; // 躯干水平仰卧
+
+                this.head.xRot = 0.05F; // 头部平枕地面
+                this.head.yRot = radHeadYaw * 0.4F;
+
+                // 双臂自然放松贴在体侧
+                this.rightArm.xRot = 0.0F;
+                this.rightArm.zRot = 0.2F;
+                this.rightForearm.xRot = -0.15F;
+
+                this.leftArm.xRot = 0.0F;
+                this.leftArm.zRot = -0.2F;
+                this.leftForearm.xRot = -0.15F;
+
+                // 双腿平伸微外展放松
+                this.rightLeg.xRot = 0.0F;
+                this.rightLeg.zRot = 0.1F;
+                this.leftLeg.xRot = 0.0F;
+                this.leftLeg.zRot = -0.1F;
+            }
+            case HOLDING_BELLY_GROUND -> {
+                // 捂腹侧撑在地：半侧卧倒地，左肘撑地支起上半身，右手死死捂住腹部，双腿因剧痛蜷屈
+                this.pelvis.y = PELVIS_DEFAULT_Y + 6.5F; // 骨盆贴近地面
+                this.pelvis.xRot = -1.2F; // 上半身后仰约 70 度半撑起
+                this.pelvis.zRot = 0.55F; // 身体向左侧侧倾
+                this.chest.xRot = 0.3F; // 痛苦蜷腹含胸
+                this.chest.yRot = -0.2F;
+
+                this.head.xRot = 0.15F + radHeadPitch * 0.4F;
+                this.head.yRot = -0.3F + radHeadYaw * 0.4F;
+
+                // 左臂支撑地面：大臂后撑，小臂弯折按地
+                this.leftArm.xRot = 0.4F;
+                this.leftArm.yRot = -0.2F;
+                this.leftArm.zRot = -0.75F;
+                this.leftForearm.xRot = -1.4F;
+                this.leftForearm.zRot = 0.3F;
+
+                // 右手紧捂腹部：大臂内收，小臂横折紧贴腹部
+                this.rightArm.xRot = -0.65F;
+                this.rightArm.yRot = -0.5F;
+                this.rightArm.zRot = 0.4F;
+                this.rightForearm.xRot = -1.75F;
+                this.rightForearm.yRot = -0.2F;
+
+                // 双腿蜷曲：右腿在上深屈拱起，左腿在下贴地微弯
+                this.rightLeg.xRot = -0.85F;
+                this.rightLeg.yRot = -0.2F;
+                this.rightLeg.zRot = 0.3F;
+                this.rightShin.xRot = 1.3F; // 右膝拱起
+
+                this.leftLeg.xRot = -0.25F;
+                this.leftLeg.zRot = -0.2F;
+                this.leftShin.xRot = 0.45F;
+            }
+            case HANDS_ON_HEAD -> {
+                // 双手抱头：双臂上抬折向脑后/头顶护头，身躯含胸微蹲，表现惊恐或受降防卫
+                this.pelvis.y = PELVIS_DEFAULT_Y + 1.2F; // 稍沉重心
+                this.pelvis.xRot = 0.25F; // 躯干微躬防卫
+                this.chest.xRot = 0.2F; // 含胸收拢
+
+                this.head.xRot = 0.4F + radHeadPitch * 0.3F; // 头部低下埋在手臂间
+                this.head.yRot = radHeadYaw * 0.3F;
+
+                // 右臂高举折叠抱头
+                this.rightArm.xRot = -2.6F;
+                this.rightArm.yRot = -0.35F;
+                this.rightArm.zRot = 0.4F;
+                this.rightForearm.xRot = -1.9F; // 小臂反扣后脑
+                this.rightForearm.yRot = -0.25F;
+
+                // 左臂高举折叠抱头（对称护头）
+                this.leftArm.xRot = -2.6F;
+                this.leftArm.yRot = 0.35F;
+                this.leftArm.zRot = -0.4F;
+                this.leftForearm.xRot = -1.9F;
+                this.leftForearm.yRot = 0.25F;
+
+                // 双腿微屈开立，稳住防守重心
+                this.rightLeg.xRot = -0.2F;
+                this.rightLeg.zRot = 0.15F;
+                this.rightShin.xRot = 0.35F;
+
+                this.leftLeg.xRot = -0.2F;
+                this.leftLeg.zRot = -0.15F;
+                this.leftShin.xRot = 0.35F;
+            }
             case REST -> {
                 // 自然待机站立与呼吸律动，行走时伴随膝关节/肘关节的细微屈折
                 this.head.xRot = radHeadPitch;

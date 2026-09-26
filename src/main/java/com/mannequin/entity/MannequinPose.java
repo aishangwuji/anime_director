@@ -18,7 +18,13 @@ public enum MannequinPose {
     /** 抬臂瞄准/向前施法指引 */
     AIMING("抬臂瞄准"),
     /** 受击后仰/倒地负伤姿势 */
-    FALLEN("受击倒地");
+    FALLEN("受击倒地"),
+    /** 安详平躺在地上 */
+    LYING("平躺在地"),
+    /** 侧身捂着肚子单臂支撑在地上 */
+    HOLDING_BELLY_GROUND("捂腹侧撑在地"),
+    /** 双手抱头防卫/受降姿势 */
+    HANDS_ON_HEAD("双手抱头");
 
     private final String displayName;
 

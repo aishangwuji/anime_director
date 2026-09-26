@@ -182,7 +182,7 @@ public class MannequinEntity extends Entity {
     /**
      * 导演交互：
      * <ul>
-     *   <li>潜行右键：轮盘/顺序循环切换 6 大经典姿态预设；</li>
+     *   <li>潜行右键：轮盘/顺序循环切换动作姿态预设；</li>
      *   <li>手持染料：给替身指定角色语义纯色；</li>
      *   <li>手持荧石粉/火把：一键开启或关闭 Unlit 纯平无阴影抠像模式。</li>
      * </ul>
@@ -200,7 +200,7 @@ public class MannequinEntity extends Entity {
             return InteractionResult.sidedSuccess(level().isClientSide());
         }
 
-        // 1. 空手/其他物品 + 潜行右键：循环切换 6 大经典动作姿态预设
+        // 1. 空手/其他物品 + 潜行右键：循环切换经典动作姿态预设
         if (player.isShiftKeyDown()) {
             if (!level().isClientSide()) {
                 MannequinPose nextPose = MannequinPose.byId((getMannequinPose().ordinal() + 1) % MannequinPose.values().length);
