@@ -26,9 +26,6 @@ public final class TimelineHudOverlay implements LayeredDraw.Layer {
 
     public static final TimelineHudOverlay INSTANCE = new TimelineHudOverlay();
 
-    private static final java.nio.file.Path PREFS_PATH =
-            net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("mannequin/client_prefs.nbt");
-
     private AspectRatioMode aspectRatioMode = AspectRatioMode.OFF;
     private boolean showThirdsGrid = true;
     private boolean showGuideCard = true;
@@ -38,32 +35,53 @@ public final class TimelineHudOverlay implements LayeredDraw.Layer {
         loadPreferences();
     }
 
+    private static java.nio.file.Path getPrefsPath() {
+        try {
+            if (net.neoforged.fml.loading.FMLPaths.CONFIGDIR != null && net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get() != null) {
+                return net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("mannequin/client_prefs.nbt");
+            }
+        } catch (Throwable ignored) {
+        }
+        return java.nio.file.Paths.get("config/mannequin/client_prefs.nbt");
+    }
+
     public void loadPreferences() {
         try {
-            if (java.nio.file.Files.exists(PREFS_PATH)) {
-                net.minecraft.nbt.CompoundTag tag = net.minecraft.nbt.NbtIo.readCompressed(PREFS_PATH, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+            java.nio.file.Path path = getPrefsPath();
+            if (path != null && java.nio.file.Files.exists(path)) {
+                net.minecraft.nbt.CompoundTag tag = net.minecraft.nbt.NbtIo.readCompressed(path, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
                 if (tag.contains("tipsDismissed")) {
                     boolean dismissed = tag.getBoolean("tipsDismissed");
                     this.showGuideCard = !dismissed;
                     this.showSituationalTip = !dismissed;
                 }
+                if (tag.contains("showGuideCard")) {
+                    this.showGuideCard = tag.getBoolean("showGuideCard");
+                }
+                if (tag.contains("showSituationalTip")) {
+                    this.showSituationalTip = tag.getBoolean("showSituationalTip");
+                }
             }
-        } catch (Exception ignored) {
+        } catch (Throwable ignored) {
         }
     }
 
     public void savePreferences() {
-        java.util.concurrent.CompletableFuture.runAsync(() -> {
-            try {
-                if (PREFS_PATH.getParent() != null) {
-                    java.nio.file.Files.createDirectories(PREFS_PATH.getParent());
+        try {
+            java.nio.file.Path path = getPrefsPath();
+            if (path != null) {
+                if (path.getParent() != null) {
+                    java.nio.file.Files.createDirectories(path.getParent());
                 }
                 net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
-                tag.putBoolean("tipsDismissed", !areTipsVisible());
-                net.minecraft.nbt.NbtIo.writeCompressed(tag, PREFS_PATH);
-            } catch (Exception ignored) {
+                boolean dismissed = !areTipsVisible();
+                tag.putBoolean("tipsDismissed", dismissed);
+                tag.putBoolean("showGuideCard", showGuideCard);
+                tag.putBoolean("showSituationalTip", showSituationalTip);
+                net.minecraft.nbt.NbtIo.writeCompressed(tag, path);
             }
-        });
+        } catch (Throwable ignored) {
+        }
     }
 
     public AspectRatioMode getAspectRatioMode() {

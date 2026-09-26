@@ -63,6 +63,7 @@ public final class MannequinClient {
             DirectorCameraController.INSTANCE.onLogout();
             com.mannequin.client.camera.MultiCameraBatchRunner.INSTANCE.cancel();
             com.mannequin.client.persistence.StudioPersistenceManager.INSTANCE.loadStudioScene();
+            TimelineHudOverlay.INSTANCE.loadPreferences();
             if (com.mannequin.client.studio.PureStudioManager.INSTANCE.isSlimeShieldEnabled()) {
                 com.mannequin.client.studio.PureStudioManager.INSTANCE.purgeAllSlimes();
             }
@@ -108,6 +109,7 @@ public final class MannequinClient {
      * 注册导演画幅遮罩（Letterbox）与时间轴仪表盘 GUI 图层。
      */
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
+        TimelineHudOverlay.INSTANCE.loadPreferences();
         event.registerAboveAll(
                 MannequinMod.id("director_timeline_overlay"),
                 TimelineHudOverlay.INSTANCE
