@@ -4,6 +4,8 @@ import com.mannequin.client.gui.TimelineHudOverlay;
 import com.mannequin.client.input.ModKeyMappings;
 import com.mannequin.client.timeline.MasterClockEngine;
 import com.mannequin.client.timeline.PuppeteerController;
+import com.mannequin.entity.MannequinEntity;
+import com.mannequin.network.SyncMannequinScalePayload;
 import com.mannequin.registry.ModEntityTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
@@ -554,18 +556,85 @@ public final class DirectorCameraController {
     }
 
     /**
-     * 鼠标滚轮变焦监听（上帝视角/穿越机视角下滚动滚轮平滑微调 FOV 焦距）。
+     * 鼠标滚轮监听：
+     * <ul>
+     *   <li>Shift + 滚轮：准星对准人偶时，无级连续缩放人偶体型 (5% ~ 2000%)；</li>
+     *   <li>上帝自由视角下滚轮：平滑微调镜头 FOV 变焦 (广角/长焦推拉)。</li>
+     * </ul>
      *
      * @param event NeoForge 鼠标滚轮事件
      */
     public void onMouseScroll(InputEvent.MouseScrollingEvent event) {
-        if (isCameraActive()) {
-            double deltaY = event.getScrollDeltaY();
-            if (deltaY != 0) {
-                // 向上滚拉近镜头(缩小FOV)，向下滚推远镜头(增大FOV)
-                FpvFlightController.INSTANCE.adjustFov((float) (-deltaY * 3.0F));
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null || mc.screen != null) {
+            return;
+        }
+
+        double deltaY = event.getScrollDeltaY();
+        if (deltaY == 0) {
+            return;
+        }
+
+        // 1. Shift + 滚轮：无级自由缩放准星所指人偶的体型 (5% ~ 2000%)
+        if (mc.options.keyShift.isDown() || net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+            MannequinEntity targetMannequin = findTargetMannequin(mc, 24.0);
+            if (targetMannequin != null) {
+                float currentScale = targetMannequin.getScale();
+                float factor = deltaY > 0 ? 1.06F : (1.0F / 1.06F);
+                float newScale = Math.max(0.05F, Math.min(20.0F, currentScale * factor));
+                targetMannequin.setScale(newScale);
+
+                // 立即网络同步至服务端并全网广播
+                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                        new SyncMannequinScalePayload(targetMannequin.getId(), newScale)
+                );
+
+                int percent = Math.round(newScale * 100.0F);
+                mc.player.displayClientMessage(
+                        Component.literal(String.format("§6[人偶体型] 实时缩放: §e%d%% §7(%.2fx)", percent, newScale)),
+                        true
+                );
                 event.setCanceled(true);
+                return;
             }
         }
+
+        // 2. 上帝视角/自由相机下的滚轮 FOV 变焦 (拉近/推远焦距)
+        if (isCameraActive()) {
+            // 向上滚拉近镜头(缩小FOV)，向下滚推远镜头(增大FOV)
+            FpvFlightController.INSTANCE.adjustFov((float) (-deltaY * 3.0F));
+            event.setCanceled(true);
+        }
+    }
+
+    /**
+     * 准星光线投射：从当前视角相机向视线前方发射射线检测人偶实体（最远支持 24 格大范围精准抓取）。
+     */
+    private MannequinEntity findTargetMannequin(Minecraft mc, double maxDistance) {
+        net.minecraft.world.entity.Entity cameraEntity = mc.getCameraEntity() != null ? mc.getCameraEntity() : mc.player;
+        if (cameraEntity == null || mc.level == null) {
+            return null;
+        }
+
+        Vec3 eyePos = cameraEntity.getEyePosition(1.0F);
+        Vec3 viewVec = cameraEntity.getViewVector(1.0F);
+        Vec3 reachVec = eyePos.add(viewVec.scale(maxDistance));
+        net.minecraft.world.phys.AABB searchBox = cameraEntity.getBoundingBox().expandTowards(viewVec.scale(maxDistance)).inflate(2.0);
+
+        MannequinEntity closest = null;
+        double closestDistSq = maxDistance * maxDistance;
+
+        for (net.minecraft.world.entity.Entity entity : mc.level.getEntities(cameraEntity, searchBox, e -> e instanceof MannequinEntity)) {
+            net.minecraft.world.phys.AABB aabb = entity.getBoundingBox().inflate(0.35);
+            java.util.Optional<Vec3> hit = aabb.clip(eyePos, reachVec);
+            if (hit.isPresent()) {
+                double distSq = eyePos.distanceToSqr(hit.get());
+                if (distSq < closestDistSq) {
+                    closestDistSq = distSq;
+                    closest = (MannequinEntity) entity;
+                }
+            }
+        }
+        return closest;
     }
 }

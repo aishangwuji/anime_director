@@ -74,6 +74,7 @@ public final class MasterClockEngine {
 
     private State state = State.STOPPED;
     private TimeScale timeScale = TimeScale.NORMAL;
+    private double customTimeScale = 1.0; // 连续无级演播速率 (0.05x ~ 3.00x)
     private int totalDurationTicks = 120; // 默认 120 Ticks = 6 秒 (基于 20 TPS)
     private int currentTick = 0;
     private double playbackTime = 0.0;
@@ -92,12 +93,22 @@ public final class MasterClockEngine {
         return timeScale;
     }
 
+    public double getTimeScaleValue() {
+        return customTimeScale;
+    }
+
+    public void setTimeScaleValue(double scale) {
+        this.customTimeScale = Math.max(0.05, Math.min(3.0, scale));
+    }
+
     public void setTimeScale(TimeScale timeScale) {
         this.timeScale = (timeScale != null) ? timeScale : TimeScale.NORMAL;
+        this.customTimeScale = this.timeScale.getScale();
     }
 
     public void cycleTimeScale() {
         this.timeScale = this.timeScale.next();
+        this.customTimeScale = this.timeScale.getScale();
     }
 
     public void cycleDuration() {
@@ -121,6 +132,10 @@ public final class MasterClockEngine {
         this.totalDurationTicks = Math.max(40, Math.min(24000, totalDurationTicks));
     }
 
+    public void setTotalDurationSeconds(double seconds) {
+        setTotalDurationTicks((int) Math.round(seconds * 20.0));
+    }
+
     public int getCurrentTick() {
         return currentTick;
     }
@@ -137,7 +152,7 @@ public final class MasterClockEngine {
      */
     public double getSmoothPlaybackTime(float partialTick) {
         if (state == State.PLAYING) {
-            return playbackTime + (double) partialTick * timeScale.getScale();
+            return playbackTime + (double) partialTick * customTimeScale;
         }
         return (double) currentTick + (double) partialTick;
     }
@@ -331,6 +346,7 @@ public final class MasterClockEngine {
         }
         root.put("Tracks", tracksTag);
         root.putInt("TotalDurationTicks", totalDurationTicks);
+        root.putDouble("CustomTimeScale", customTimeScale);
 
         // 异步后台落盘，避免录制停止时造成主线程帧率尖峰卡顿
         java.util.concurrent.CompletableFuture.runAsync(() -> {
@@ -376,7 +392,10 @@ public final class MasterClockEngine {
             }
             CompoundTag root = net.minecraft.nbt.NbtIo.readCompressed(file, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
             int loaded = root.contains("TotalDurationTicks") ? root.getInt("TotalDurationTicks") : 120;
-            this.totalDurationTicks = Math.max(60, loaded);
+            this.totalDurationTicks = Math.max(40, loaded);
+            if (root.contains("CustomTimeScale")) {
+                this.customTimeScale = Math.max(0.05, Math.min(3.0, root.getDouble("CustomTimeScale")));
+            }
             CompoundTag tracksTag = root.getCompound("Tracks");
             tracks.clear();
             for (String id : tracksTag.getAllKeys()) {
@@ -416,7 +435,7 @@ public final class MasterClockEngine {
      */
     public void onClientTick() {
         if (state == State.PLAYING) {
-            playbackTime += timeScale.getScale();
+            playbackTime += customTimeScale;
             currentTick = (int) playbackTime;
             if (playbackTime >= totalDurationTicks) {
                 // 播放结束，自动倒带回起点并停止
@@ -446,7 +465,7 @@ public final class MasterClockEngine {
      */
     public void onRenderTick(float partialTick) {
         if (state == State.PLAYING) {
-            double smoothTime = playbackTime + (double) partialTick * timeScale.getScale();
+            double smoothTime = playbackTime + (double) partialTick * customTimeScale;
             int tick = (int) smoothTime;
             float subTick = (float) (smoothTime - tick);
             applyTrackStatesToWorld(tick, subTick);

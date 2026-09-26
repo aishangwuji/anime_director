@@ -12,13 +12,12 @@ import com.mannequin.client.studio.PureStudioManager;
 import com.mannequin.client.timeline.MasterClockEngine;
 import com.mannequin.client.timeline.PuppeteerController;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
-
-import java.io.File;
 
 /**
  * 漫剧导演快捷操作中心（Director Control Hub / Quick Menu）。
@@ -35,8 +34,8 @@ public class DirectorQuickMenuScreen extends Screen {
 
     @Override
     protected void init() {
-        int panelWidth = Math.min(450, width - 16);
-        int panelHeight = Math.min(235, height - 12);
+        int panelWidth = Math.min(460, width - 16);
+        int panelHeight = Math.min(238, height - 12);
         int startX = (width - panelWidth) / 2;
         int startY = (height - panelHeight) / 2;
 
@@ -46,6 +45,17 @@ public class DirectorQuickMenuScreen extends Screen {
         TimelineHudOverlay hud = TimelineHudOverlay.INSTANCE;
         MultiCameraManager multiCam = MultiCameraManager.INSTANCE;
         MultiCameraBatchRunner batchRunner = MultiCameraBatchRunner.INSTANCE;
+        FpvFlightController flight = FpvFlightController.INSTANCE;
+
+        // 顶部右上角工具栏：导演手册 (H)
+        addRenderableWidget(Button.builder(Component.literal("📖 手册"), btn -> {
+            if (minecraft != null) {
+                minecraft.setScreen(new DirectorTutorialScreen());
+            }
+        })
+                .bounds(startX + panelWidth - 200, startY + 4, 58, 18)
+                .tooltip(Tooltip.create(Component.literal("§e[H] 翻看漫剧导演全操手册\n§7涵盖角色染色、动捕录制、运镜、构图与 AI 提示词指南")))
+                .build());
 
         // 顶部右上角 Clean Feed 纯净无UI录制开关
         boolean cleanFeed = batchRunner.isCleanFeedEnabled();
@@ -74,7 +84,7 @@ public class DirectorQuickMenuScreen extends Screen {
         int gapY = 4;
         int gapX = 5;
 
-        // === 第 1 行：基础镜头与飞控航速 ===
+        // ==================== 第 0 行：基础镜头与视角 ====================
         int r0Y = gridStartY;
         // 1. 上帝视角自由相机 (F6)
         boolean camActive = cam.isCameraActive();
@@ -89,11 +99,11 @@ public class DirectorQuickMenuScreen extends Screen {
                 .build());
 
         // 2. 运镜风格切换：防抖平稳视角 vs 穿越机视角 (F9)
-        CameraFlightStyle style = FpvFlightController.INSTANCE.getFlightStyle();
+        CameraFlightStyle style = flight.getFlightStyle();
         addRenderableWidget(Button.builder(
                 Component.literal("🎥 风格 [" + style.getDisplayName() + "§r]"),
                 btn -> {
-                    FpvFlightController.INSTANCE.toggleFlightStyle();
+                    flight.toggleFlightStyle();
                     rebuildWidgets();
                 })
                 .bounds(gridStartX + btnWidth + gapX, r0Y, btnWidth, btnHeight)
@@ -102,26 +112,63 @@ public class DirectorQuickMenuScreen extends Screen {
                         "§6[🚁 穿越机]：气动转弯侧倾，推力加速与惯性滑翔漂移，高动态特技运镜")))
                 .build());
 
-        // 3. 自由相机航速档位与微移预设 (J)
-        com.mannequin.client.camera.SpeedGear gear = FpvFlightController.INSTANCE.getSpeedGear();
+        // 3. 导演本体隐身切换 (F8)
+        boolean hideModel = cam.isHidePlayerModel();
         addRenderableWidget(Button.builder(
-                Component.literal("🚀 航速 [" + gear.getDisplayName() + "]"),
+                Component.literal("👤 导演隐身 [" + (hideModel ? "§a隐身" : "§e显现") + "§r]"),
                 btn -> {
-                    FpvFlightController.INSTANCE.cycleSpeedGear();
+                    cam.toggleHidePlayerModel();
                     rebuildWidgets();
                 })
                 .bounds(gridStartX + (btnWidth + gapX) * 2, r0Y, btnWidth, btnHeight)
-                .tooltip(Tooltip.create(Component.literal("§e[J] 切换自由相机飞行航速档位\n" +
-                        "§a[0.5m/s 超微移]：毫米/厘米级极微位移，轻按 A/D 不跳格\n" +
-                        "§b[2.0m/s 慢推拉]：电影级慢速推轨与子弹时间运镜\n" +
-                        "§6[6.0m/s 标准]：标准航速巡航拍摄\n" +
-                        "§d[16.0m/s 高速]：大场景全景飞行调度\n" +
-                        "§e★ 技巧：按住 [Alt] 键可随时切入 0.25x 极端微移爬行！")))
+                .tooltip(Tooltip.create(Component.literal("§e[F8] 显隐导演玩家本体模型\n§7上帝视角下彻底隐身，避免地面替身破坏构图")))
                 .build());
 
-        // === 第 2 行：附身操纵与动作捕捉 ===
+        // ==================== 第 1 行：飞控航速与推拉防抖阻尼 (无级滑动条) ====================
         int r1Y = gridStartY + (btnHeight + gapY);
-        // 4. 准星附身受控人偶 (G)
+        // 4. 自由相机飞行航速滑动条 (0.2 m/s ~ 30.0 m/s)
+        double currentSpeed = flight.getSpeed();
+        double normSpeed = Math.max(0.0, Math.min(1.0, (currentSpeed - 0.2) / (30.0 - 0.2)));
+        DirectorSlider speedSlider = new DirectorSlider(
+                gridStartX, r1Y, btnWidth, btnHeight, normSpeed,
+                val -> Component.literal(String.format("🚀 航速: %.1fm/s", 0.2 + val * (30.0 - 0.2))),
+                val -> {
+                    double spd = 0.2 + val * (30.0 - 0.2);
+                    flight.setSpeed(spd);
+                    flight.savePreferences();
+                }
+        );
+        speedSlider.setTooltip(Tooltip.create(Component.literal("§e[飞行航速滑动条]\n§70.2m/s ~ 30.0m/s 无级自由微调\n低速支持厘米级慢速微移，高速支持大场景长镜头俯冲\n★ 技巧：按住 [Alt] 键可随时切入 0.25x 极端微移爬行！")));
+        addRenderableWidget(speedSlider);
+
+        // 5. 推拉运镜防抖阻尼滑动条 (0% ~ 100%)
+        double currentStab = flight.getStabilizationStrength();
+        DirectorSlider stabSlider = new DirectorSlider(
+                gridStartX + btnWidth + gapX, r1Y, btnWidth, btnHeight, currentStab,
+                val -> Component.literal(String.format("🛡 防抖: %d%%", (int) Math.round(val * 100.0))),
+                val -> {
+                    flight.setStabilizationStrength(val);
+                    flight.savePreferences();
+                }
+        );
+        stabSlider.setTooltip(Tooltip.create(Component.literal("§e[推拉运镜液压防抖阻尼]\n§70% ~ 100% 液压云台级阻尼滤波\n0%：纯手动低延迟无平滑\n70%：黄金推拉防抖，过滤手部横向微颤与晃动\n100%：极致机械导轨平稳推移")));
+        addRenderableWidget(stabSlider);
+
+        // 6. 构图画幅遮罩 (V)
+        AspectRatioMode ratio = hud.getAspectRatioMode();
+        addRenderableWidget(Button.builder(
+                Component.literal("📐 画幅 [" + ratio.getDisplayName() + "]"),
+                btn -> {
+                    hud.toggleAspectRatio();
+                    rebuildWidgets();
+                })
+                .bounds(gridStartX + (btnWidth + gapX) * 2, r1Y, btnWidth, btnHeight)
+                .tooltip(Tooltip.create(Component.literal("§e[V] 循环切换拍摄画幅遮罩\n§7全屏 ➔ 9:16竖屏短剧 ➔ 16:9宽屏 ➔ 21:9电影宽银幕")))
+                .build());
+
+        // ==================== 第 2 行：附身操纵与动作捕捉 ====================
+        int r2Y = gridStartY + (btnHeight + gapY) * 2;
+        // 7. 准星附身受控人偶 (G)
         boolean possessing = puppeteer.isPossessing();
         addRenderableWidget(Button.builder(
                 Component.literal("🎭 附身人偶 [" + (possessing ? "§a附身中" : "§7未附身") + "§r]"),
@@ -129,11 +176,11 @@ public class DirectorQuickMenuScreen extends Screen {
                     onClose();
                     puppeteer.togglePossession();
                 })
-                .bounds(gridStartX, r1Y, btnWidth, btnHeight)
+                .bounds(gridStartX, r2Y, btnWidth, btnHeight)
                 .tooltip(Tooltip.create(Component.literal("§e[G] 附身准星所指人偶\n§7接管目标人偶走位与动作，退出菜单后直接操控")))
                 .build());
 
-        // 5. 动捕录制开关 (K)
+        // 8. 动捕录制开关 (K)
         boolean recording = puppeteer.isRecording();
         addRenderableWidget(Button.builder(
                 Component.literal("🔴 动捕录制 [" + (recording ? "§c录制中" : "§7待机") + "§r]"),
@@ -149,11 +196,11 @@ public class DirectorQuickMenuScreen extends Screen {
                         minecraft.player.displayClientMessage(Component.literal("§c[提示] 必须先按 [G] 附身人偶才能开始动捕录制！"), true);
                     }
                 })
-                .bounds(gridStartX + btnWidth + gapX, r1Y, btnWidth, btnHeight)
+                .bounds(gridStartX + btnWidth + gapX, r2Y, btnWidth, btnHeight)
                 .tooltip(Tooltip.create(Component.literal("§e[K] 开启/停止受控实体动捕\n§7对当前附身人偶实时捕捉位移与朝向动作")))
                 .build());
 
-        // 6. 全场多轨同步排演 (P)
+        // 9. 全场多轨同步排演 (P)
         boolean playing = clock.getState() == MasterClockEngine.State.PLAYING;
         addRenderableWidget(Button.builder(
                 Component.literal("▶ 全场排演 [" + (playing ? "§a播放" : "§7暂停") + "§r]"),
@@ -165,13 +212,13 @@ public class DirectorQuickMenuScreen extends Screen {
                     }
                     rebuildWidgets();
                 })
-                .bounds(gridStartX + (btnWidth + gapX) * 2, r1Y, btnWidth, btnHeight)
+                .bounds(gridStartX + (btnWidth + gapX) * 2, r2Y, btnWidth, btnHeight)
                 .tooltip(Tooltip.create(Component.literal("§e[P] 启动/暂停全场协同排演\n§7所有人偶与运镜机位按照时间轴完全同步启动开演")))
                 .build());
 
-        // === 第 3 行：时间流速与总时长调度 ===
-        int r2Y = gridStartY + (btnHeight + gapY) * 2;
-        // 7. 一键倒带复位 (R)
+        // ==================== 第 3 行：时间流速与总时长 (无级滑动条) ====================
+        int r3Y = gridStartY + (btnHeight + gapY) * 3;
+        // 10. 一键倒带复位 (R)
         addRenderableWidget(Button.builder(
                 Component.literal("⏪ 一键倒带 [§e00:00§r]"),
                 btn -> {
@@ -181,35 +228,43 @@ public class DirectorQuickMenuScreen extends Screen {
                     }
                     rebuildWidgets();
                 })
-                .bounds(gridStartX, r2Y, btnWidth, btnHeight)
+                .bounds(gridStartX, r3Y, btnWidth, btnHeight)
                 .tooltip(Tooltip.create(Component.literal("§e[R] 一键倒带复位回起点\n§7瞬间将所有人偶、载具与机位吸回第 0 帧")))
                 .build());
 
-        // 8. 演播速度 (子弹时间 / 慢动作)
-        addRenderableWidget(Button.builder(
-                Component.literal("⚡ 速度 [" + clock.getTimeScale().getDisplayName() + "]"),
-                btn -> {
-                    clock.cycleTimeScale();
-                    rebuildWidgets();
-                })
-                .bounds(gridStartX + btnWidth + gapX, r2Y, btnWidth, btnHeight)
-                .tooltip(Tooltip.create(Component.literal("§e[点击切换演播速度]\n§71.0x原速 ➔ 0.5x慢动作 ➔ 0.25x子弹时间 ➔ 2.0x快进\n慢动作/子弹时间下可精细化微调机位构图，\n录制时直接输出超丝滑高帧率慢镜头 MP4！")))
-                .build());
+        // 11. 演播时间流速滑动条 (0.05x ~ 3.00x)
+        double currentRate = clock.getTimeScaleValue();
+        double normRate = Math.max(0.0, Math.min(1.0, (currentRate - 0.05) / (3.00 - 0.05)));
+        DirectorSlider timeScaleSlider = new DirectorSlider(
+                gridStartX + btnWidth + gapX, r3Y, btnWidth, btnHeight, normRate,
+                val -> Component.literal(String.format("⚡ 速率: %.2fx", 0.05 + val * (3.00 - 0.05))),
+                val -> {
+                    double rate = 0.05 + val * (3.00 - 0.05);
+                    clock.setTimeScaleValue(rate);
+                    clock.saveToDisk();
+                }
+        );
+        timeScaleSlider.setTooltip(Tooltip.create(Component.literal("§e[演播时间流速滑动条]\n§70.05x ~ 3.00x 无级时间膨胀/压缩\n<1.0x：超慢动作与子弹时间，便于精细构图与慢动作成片\n1.0x：标准正常流速\n>1.0x：快进排演")));
+        addRenderableWidget(timeScaleSlider);
 
-        // 9. 场景时长
-        addRenderableWidget(Button.builder(
-                Component.literal("⏱ 时长 [" + String.format("%.0fs", clock.getTotalDurationSeconds()) + "]"),
-                btn -> {
-                    clock.cycleDuration();
-                    rebuildWidgets();
-                })
-                .bounds(gridStartX + (btnWidth + gapX) * 2, r2Y, btnWidth, btnHeight)
-                .tooltip(Tooltip.create(Component.literal("§e[点击切换场景时长]\n§76秒 ➔ 10秒 ➔ 15秒 ➔ 30秒 ➔ 60秒\n设置排演与视频录制的总时长")))
-                .build());
+        // 12. 场景时长滑动条 (2.0s ~ 180.0s)
+        double currentSec = clock.getTotalDurationSeconds();
+        double normSec = Math.max(0.0, Math.min(1.0, (currentSec - 2.0) / (180.0 - 2.0)));
+        DirectorSlider durationSlider = new DirectorSlider(
+                gridStartX + (btnWidth + gapX) * 2, r3Y, btnWidth, btnHeight, normSec,
+                val -> Component.literal(String.format("⏱ 时长: %.1fs", 2.0 + val * (180.0 - 2.0))),
+                val -> {
+                    double sec = 2.0 + val * (180.0 - 2.0);
+                    clock.setTotalDurationSeconds(sec);
+                    clock.saveToDisk();
+                }
+        );
+        durationSlider.setTooltip(Tooltip.create(Component.literal("§e[场景总时长滑动条]\n§72.0秒 ~ 180.0秒 无级时长设定\n控制多轨排演与分镜机位自动录制的循环周期")));
+        addRenderableWidget(durationSlider);
 
-        // === 第 4 行：主视角与全机位 MP4 直出 ===
-        int r3Y = gridStartY + (btnHeight + gapY) * 3;
-        // 10. 打下分镜拍摄机位 (B)
+        // ==================== 第 4 行：主视角与全机位 MP4 直出 ====================
+        int r4Y = gridStartY + (btnHeight + gapY) * 4;
+        // 13. 打下分镜拍摄机位 (B)
         int stationCount = multiCam.getStations().size();
         addRenderableWidget(Button.builder(
                 Component.literal("🎥 打下机位 [§6" + stationCount + "个§r]"),
@@ -217,11 +272,11 @@ public class DirectorQuickMenuScreen extends Screen {
                     multiCam.addStationAtCurrent(null);
                     rebuildWidgets();
                 })
-                .bounds(gridStartX, r3Y, btnWidth, btnHeight)
+                .bounds(gridStartX, r4Y, btnWidth, btnHeight)
                 .tooltip(Tooltip.create(Component.literal("§e[B] 在当前视角打下一个固定分镜机位\n§7记录空间位置、角度与当前镜头焦距")))
                 .build());
 
-        // 11. 录制主视角实时运镜 (F10)
+        // 14. 录制主视角实时运镜 (F10)
         boolean isLivePov = batchRunner.isLivePovRecording();
         addRenderableWidget(Button.builder(
                 Component.literal(isLivePov ? "⏹ 停止主视" : "🔴 录主视角 (POV)"),
@@ -234,14 +289,14 @@ public class DirectorQuickMenuScreen extends Screen {
                         batchRunner.startLivePovRecording();
                     }
                 })
-                .bounds(gridStartX + btnWidth + gapX, r3Y, btnWidth, btnHeight)
+                .bounds(gridStartX + btnWidth + gapX, r4Y, btnWidth, btnHeight)
                 .tooltip(Tooltip.create(Component.literal("§c[F10] 导演主视角实时录制 (直出 MP4)\n" +
                         "§7以当前自由相机视角实时自由飞行手持运镜，\n" +
                         "全场演员与时间轴同步开演，录制 Clean Feed 纯净 MP4，\n" +
                         "随时按 [F10] 停止，时间轴演播完成也将自动封包！")))
                 .build());
 
-        // 12. 批量录制全机位 MP4 参考视频 (Previs)
+        // 15. 批量录制全机位 MP4 参考视频 (Previs)
         boolean isBatching = batchRunner.isRunning() && !batchRunner.isLivePov();
         addRenderableWidget(Button.builder(
                 Component.literal(isBatching ? "⏹ 停止批录" : "📼 批量录机位"),
@@ -253,13 +308,13 @@ public class DirectorQuickMenuScreen extends Screen {
                         batchRunner.startBatchRecording();
                     }
                 })
-                .bounds(gridStartX + (btnWidth + gapX) * 2, r3Y, btnWidth, btnHeight)
+                .bounds(gridStartX + (btnWidth + gapX) * 2, r4Y, btnWidth, btnHeight)
                 .tooltip(Tooltip.create(Component.literal("§6★ 直出全机位 MP4 参考视频\n§7自动遍历所有分镜机位并顺序录制完整演播片段，\n生成标准 H.264 视频直接作为 AI (Kling/可灵) 参考素材！")))
                 .build());
 
-        // === 第 5 行：导播监视、单机位录像与画幅构图 ===
-        int r4Y = gridStartY + (btnHeight + gapY) * 4;
-        // 13. 导播多机位监视大厅与分镜试看
+        // ==================== 第 5 行：导播监视、单机位录像与史莱姆力场 ====================
+        int r5Y = gridStartY + (btnHeight + gapY) * 5;
+        // 16. 导播多机位监视大厅与分镜试看
         addRenderableWidget(Button.builder(
                 Component.literal("📺 监视大厅 [" + (stationCount > 0 ? "§6" + stationCount + "机位§r" : "§7未设§r") + "]"),
                 btn -> {
@@ -267,48 +322,22 @@ public class DirectorQuickMenuScreen extends Screen {
                         minecraft.setScreen(new CameraMonitorScreen());
                     }
                 })
-                .bounds(gridStartX, r4Y, btnWidth, btnHeight)
+                .bounds(gridStartX, r5Y, btnWidth, btnHeight)
                 .tooltip(Tooltip.create(Component.literal("§e导播多机位监视大厅\n§7总览所有分镜机位，一键切入沉浸试看与动作排演联动，\n支持机位重命名、覆盖更新与批量录制")))
                 .build());
 
-        // 14. 录制当前机位/单机位排演
+        // 17. 录制当前机位/单机位排演
         addRenderableWidget(Button.builder(
                 Component.literal("🎬 录当前机位"),
                 btn -> {
                     onClose();
                     batchRunner.startSingleStationRecording(null);
                 })
-                .bounds(gridStartX + btnWidth + gapX, r4Y, btnWidth, btnHeight)
+                .bounds(gridStartX + btnWidth + gapX, r5Y, btnWidth, btnHeight)
                 .tooltip(Tooltip.create(Component.literal("§6★ 单机位排演录制 (直出 MP4)\n§7针对当前所选机位或试看构图视角，自动倒带并开启录制演播，\n录制完成后自动生成真实标准的 H.264 MP4 视频！")))
                 .build());
 
-        // 15. 构图画幅遮罩 (V)
-        AspectRatioMode ratio = hud.getAspectRatioMode();
-        addRenderableWidget(Button.builder(
-                Component.literal("📐 画幅 [" + ratio.getDisplayName() + "]"),
-                btn -> {
-                    hud.toggleAspectRatio();
-                    rebuildWidgets();
-                })
-                .bounds(gridStartX + (btnWidth + gapX) * 2, r4Y, btnWidth, btnHeight)
-                .tooltip(Tooltip.create(Component.literal("§e[V] 循环切换拍摄画幅遮罩\n§7全屏 ➔ 9:16竖屏短剧 ➔ 16:9宽屏 ➔ 21:9电影宽银幕")))
-                .build());
-
-        // === 第 6 行：隐身、纯净片场与视频目录 ===
-        int r5Y = gridStartY + (btnHeight + gapY) * 5;
-        // 16. 导演本体隐身切换 (F8)
-        boolean hideModel = cam.isHidePlayerModel();
-        addRenderableWidget(Button.builder(
-                Component.literal("👤 导演隐身 [" + (hideModel ? "§a隐身" : "§e显现") + "§r]"),
-                btn -> {
-                    cam.toggleHidePlayerModel();
-                    rebuildWidgets();
-                })
-                .bounds(gridStartX, r5Y, btnWidth, btnHeight)
-                .tooltip(Tooltip.create(Component.literal("§e[F8] 显隐导演玩家本体模型\n§7上帝视角下彻底隐身，避免地面替身破坏构图")))
-                .build());
-
-        // 17. 纯净片场史莱姆力场开关
+        // 18. 纯净片场史莱姆力场开关
         boolean shieldActive = PureStudioManager.INSTANCE.isSlimeShieldEnabled();
         addRenderableWidget(Button.builder(
                 Component.literal("🛡 史莱姆力场 [" + (shieldActive ? "§a开启" : "§7关闭") + "§r]"),
@@ -316,19 +345,11 @@ public class DirectorQuickMenuScreen extends Screen {
                     PureStudioManager.INSTANCE.toggleSlimeShield();
                     rebuildWidgets();
                 })
-                .bounds(gridStartX + btnWidth + gapX, r5Y, btnWidth, btnHeight)
+                .bounds(gridStartX + (btnWidth + gapX) * 2, r5Y, btnWidth, btnHeight)
                 .tooltip(Tooltip.create(Component.literal("§e纯净片场史莱姆力场\n§7专为超平坦世界设计！开启时从根源阻止史莱姆和岩浆怪生成，\n杜绝蹦跳撞翻演员、挤占镜头和噪声干扰")))
                 .build());
 
-        // 18. 打开 MP4 视频保存目录
-        addRenderableWidget(Button.builder(
-                Component.literal("📁 视频目录"),
-                btn -> multiCam.openExportFolder())
-                .bounds(gridStartX + (btnWidth + gapX) * 2, r5Y, btnWidth, btnHeight)
-                .tooltip(Tooltip.create(Component.literal("§e打开 MP4 视频存储文件夹\n§7在 Windows 资源管理器中直达视频保存路径")))
-                .build());
-
-        // === 第 7 行：工程持久化、手册与清空 ===
+        // ==================== 第 6 行：工程持久化、视频目录与清空 ====================
         int r6Y = gridStartY + (btnHeight + gapY) * 6;
         // 19. 保存片场工程
         addRenderableWidget(Button.builder(
@@ -343,16 +364,12 @@ public class DirectorQuickMenuScreen extends Screen {
                 .tooltip(Tooltip.create(Component.literal("§e保存当前存档片场数据\n§7持久化保存全场演员动作轨迹、分镜机位与滑轨，\n下次进入该世界存档时自动无缝恢复！")))
                 .build());
 
-        // 20. 导演实战手册 (H)
+        // 20. 打开 MP4 视频保存目录
         addRenderableWidget(Button.builder(
-                Component.literal("📖 导演手册"),
-                btn -> {
-                    if (minecraft != null) {
-                        minecraft.setScreen(new DirectorTutorialScreen());
-                    }
-                })
+                Component.literal("📁 视频目录"),
+                btn -> multiCam.openExportFolder())
                 .bounds(gridStartX + btnWidth + gapX, r6Y, btnWidth, btnHeight)
-                .tooltip(Tooltip.create(Component.literal("§e[H] 翻看漫剧导演全操手册\n§7涵盖角色染色、动捕录制、运镜、构图与 AI 提示词指南")))
+                .tooltip(Tooltip.create(Component.literal("§e打开 MP4 视频存储文件夹\n§7在 Windows 资源管理器中直达视频保存路径")))
                 .build());
 
         // 21. 清空全轨 (Del)
@@ -385,8 +402,8 @@ public class DirectorQuickMenuScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        int panelWidth = Math.min(450, width - 16);
-        int panelHeight = Math.min(235, height - 12);
+        int panelWidth = Math.min(460, width - 16);
+        int panelHeight = Math.min(238, height - 12);
         int startX = (width - panelWidth) / 2;
         int startY = (height - panelHeight) / 2;
 
@@ -404,9 +421,16 @@ public class DirectorQuickMenuScreen extends Screen {
         if (font != null) {
             g.drawString(font, "§6§l漫剧导演快捷操作中心 §7(Director Hub)", startX + 12, startY + 8, 0xFFFFFFFF, true);
             MultiCameraManager mcm = MultiCameraManager.INSTANCE;
-            PureStudioManager psm = PureStudioManager.INSTANCE;
             MasterClockEngine mce = MasterClockEngine.INSTANCE;
-            String status = "§7机位: §e" + mcm.getStations().size() + "个 §8| 航速: §e" + FpvFlightController.INSTANCE.getSpeedGear().getDisplayName() + " §8| 风格: §a" + FpvFlightController.INSTANCE.getFlightStyle().getDisplayName() + " §8| 速度: §b" + mce.getTimeScale().getDisplayName();
+            FpvFlightController flight = FpvFlightController.INSTANCE;
+            String status = String.format("§7机位: §e%d个 §8| 航速: §e%.1fm/s §8| 防抖: §a%d%% §8| 风格: §6%s §8| 速率: §b%.2fx §8| 时长: §d%.1fs",
+                    mcm.getStations().size(),
+                    flight.getSpeed(),
+                    (int) Math.round(flight.getStabilizationStrength() * 100.0),
+                    flight.getFlightStyle().getDisplayName(),
+                    mce.getTimeScaleValue(),
+                    mce.getTotalDurationSeconds()
+            );
             g.drawString(font, status, startX + 12, startY + 22, 0xFFAAAAAA, false);
         }
 
@@ -417,5 +441,32 @@ public class DirectorQuickMenuScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false; // 不暂停单人游戏，方便排演观察
+    }
+
+    /**
+     * 通用导演无级滑动条控件（封装 AbstractSliderButton，支持实时数值反馈与回调执行）。
+     */
+    private static class DirectorSlider extends AbstractSliderButton {
+        private final java.util.function.Consumer<Double> onApply;
+        private final java.util.function.Function<Double, Component> messageProvider;
+
+        public DirectorSlider(int x, int y, int width, int height, double initialValue,
+                              java.util.function.Function<Double, Component> messageProvider,
+                              java.util.function.Consumer<Double> onApply) {
+            super(x, y, width, height, Component.empty(), initialValue);
+            this.messageProvider = messageProvider;
+            this.onApply = onApply;
+            updateMessage();
+        }
+
+        @Override
+        protected void updateMessage() {
+            setMessage(messageProvider.apply(this.value));
+        }
+
+        @Override
+        protected void applyValue() {
+            onApply.accept(this.value);
+        }
     }
 }

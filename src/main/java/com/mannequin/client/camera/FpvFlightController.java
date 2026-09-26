@@ -38,8 +38,10 @@ public final class FpvFlightController {
     private float manualRoll = 0.0F;   // 玩家 Z/X 键控制的持久横滚角
     private float bankRoll = 0.0F;     // 鼠标急转弯产生的瞬时动力学侧倾角
 
-    private static final java.nio.file.Path PREFS_PATH =
-            net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("mannequin/client_prefs.nbt");
+    // 电影级液压云台鼠标防抖与推拉轴向稳定
+    private float targetYaw = 0.0F;
+    private float targetPitch = 0.0F;
+    private double stabilizationStrength = 0.70; // 0.0 (无滤波) ~ 1.0 (极强液压阻尼)，默认 70%
 
     // 动态焦距 FOV
     private float fov = 70.0F;
@@ -58,10 +60,21 @@ public final class FpvFlightController {
         loadPreferences();
     }
 
+    private static java.nio.file.Path getPrefsPath() {
+        try {
+            if (net.neoforged.fml.loading.FMLPaths.CONFIGDIR != null && net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get() != null) {
+                return net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("mannequin/client_prefs.nbt");
+            }
+        } catch (Throwable ignored) {
+        }
+        return java.nio.file.Paths.get("config/mannequin/client_prefs.nbt");
+    }
+
     public void loadPreferences() {
         try {
-            if (java.nio.file.Files.exists(PREFS_PATH)) {
-                net.minecraft.nbt.CompoundTag tag = net.minecraft.nbt.NbtIo.readCompressed(PREFS_PATH, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+            java.nio.file.Path path = getPrefsPath();
+            if (path != null && java.nio.file.Files.exists(path)) {
+                net.minecraft.nbt.CompoundTag tag = net.minecraft.nbt.NbtIo.readCompressed(path, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
                 if (tag.contains("cameraFlightStyle")) {
                     String styleName = tag.getString("cameraFlightStyle");
                     try {
@@ -77,7 +90,10 @@ public final class FpvFlightController {
                     }
                 }
                 if (tag.contains("maxSpeed")) {
-                    this.maxSpeed = tag.getDouble("maxSpeed");
+                    this.maxSpeed = Math.max(0.2, Math.min(30.0, tag.getDouble("maxSpeed")));
+                }
+                if (tag.contains("stabilizationStrength")) {
+                    this.stabilizationStrength = Math.max(0.0, Math.min(1.0, tag.getDouble("stabilizationStrength")));
                 }
                 if (tag.contains("altCreepMultiplier")) {
                     this.altCreepMultiplier = tag.getDouble("altCreepMultiplier");
@@ -90,25 +106,47 @@ public final class FpvFlightController {
     public void savePreferences() {
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
-                if (PREFS_PATH.getParent() != null) {
-                    java.nio.file.Files.createDirectories(PREFS_PATH.getParent());
-                }
-                net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
-                if (java.nio.file.Files.exists(PREFS_PATH)) {
-                    try {
-                        tag = net.minecraft.nbt.NbtIo.readCompressed(PREFS_PATH, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
-                    } catch (Exception ignored) {
-                        tag = new net.minecraft.nbt.CompoundTag();
+                java.nio.file.Path path = getPrefsPath();
+                if (path != null) {
+                    if (path.getParent() != null) {
+                        java.nio.file.Files.createDirectories(path.getParent());
                     }
+                    net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
+                    if (java.nio.file.Files.exists(path)) {
+                        try {
+                            tag = net.minecraft.nbt.NbtIo.readCompressed(path, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+                        } catch (Exception ignored) {
+                            tag = new net.minecraft.nbt.CompoundTag();
+                        }
+                    }
+                    tag.putString("cameraFlightStyle", flightStyle.name());
+                    tag.putString("speedGear", speedGear.name());
+                    tag.putDouble("maxSpeed", maxSpeed);
+                    tag.putDouble("stabilizationStrength", stabilizationStrength);
+                    tag.putDouble("altCreepMultiplier", altCreepMultiplier);
+                    net.minecraft.nbt.NbtIo.writeCompressed(tag, path);
                 }
-                tag.putString("cameraFlightStyle", flightStyle.name());
-                tag.putString("speedGear", speedGear.name());
-                tag.putDouble("maxSpeed", maxSpeed);
-                tag.putDouble("altCreepMultiplier", altCreepMultiplier);
-                net.minecraft.nbt.NbtIo.writeCompressed(tag, PREFS_PATH);
             } catch (Exception ignored) {
             }
         });
+    }
+
+    public double getSpeed() {
+        return maxSpeed;
+    }
+
+    public void setSpeed(double speed) {
+        this.maxSpeed = Math.max(0.2, Math.min(30.0, speed));
+        savePreferences();
+    }
+
+    public double getStabilizationStrength() {
+        return stabilizationStrength;
+    }
+
+    public void setStabilizationStrength(double strength) {
+        this.stabilizationStrength = Math.max(0.0, Math.min(1.0, strength));
+        savePreferences();
     }
 
     public CameraFlightStyle getFlightStyle() {
@@ -183,6 +221,8 @@ public final class FpvFlightController {
                 this.position = mc.player.getEyePosition();
                 this.pitch = mc.player.getXRot();
                 this.yaw = mc.player.getYRot();
+                this.targetPitch = this.pitch;
+                this.targetYaw = this.yaw;
                 this.roll = 0.0F;
                 this.manualRoll = 0.0F;
                 this.bankRoll = 0.0F;
@@ -237,6 +277,7 @@ public final class FpvFlightController {
 
     public void setPitch(float pitch) {
         this.pitch = pitch;
+        this.targetPitch = pitch;
     }
 
     public float getYaw() {
@@ -245,6 +286,7 @@ public final class FpvFlightController {
 
     public void setYaw(float yaw) {
         this.yaw = yaw;
+        this.targetYaw = yaw;
     }
 
     public float getRoll() {
@@ -287,11 +329,11 @@ public final class FpvFlightController {
     }
 
     public void adjustSpeed(double delta) {
-        this.maxSpeed = Math.max(0.2, Math.min(30.0, this.maxSpeed + delta));
+        setSpeed(this.maxSpeed + delta);
     }
 
     /**
-     * 鼠标视角输入更新（包含转弯侧倾角动力学计算）。
+     * 鼠标视角输入更新（包含液压云台防抖、推拉轴向防晃与侧倾动力学计算）。
      *
      * @param deltaYaw   水平偏航旋转量
      * @param deltaPitch 垂直俯仰旋转量
@@ -307,12 +349,41 @@ public final class FpvFlightController {
             return;
         }
 
-        this.yaw = net.minecraft.util.Mth.wrapDegrees((float) (this.yaw + deltaYaw * 0.15));
-        this.pitch = (float) Math.max(-89.9, Math.min(89.9, this.pitch + deltaPitch * 0.15));
+        // 推拉运镜轴向防抖：若正在按 W (前推) 或 S (后拉)，对侧向/垂直手抖施加额外的方向阻尼滤波
+        Minecraft mc = Minecraft.getInstance();
+        boolean isDollying = mc.options.keyUp.isDown() || mc.options.keyDown.isDown();
+        double effectiveDeltaYaw = deltaYaw;
+        double effectiveDeltaPitch = deltaPitch;
+
+        if (isDollying && stabilizationStrength > 0.0) {
+            // 前推或后拉运镜时，过滤掉 60% ~ 80% 的意外侧向晃动与俯仰微晃
+            double lateralDamp = 1.0 - (stabilizationStrength * 0.70);
+            effectiveDeltaYaw *= lateralDamp;
+            effectiveDeltaPitch *= lateralDamp;
+        }
+
+        // 高频生理微颤抖噪声门限滤波（Noise Gate）：过滤极微小颤动
+        if (stabilizationStrength > 0.0) {
+            double threshold = 0.02 * stabilizationStrength;
+            if (Math.abs(effectiveDeltaYaw) < threshold) {
+                effectiveDeltaYaw = 0.0;
+            }
+            if (Math.abs(effectiveDeltaPitch) < threshold) {
+                effectiveDeltaPitch = 0.0;
+            }
+        }
+
+        this.targetYaw = net.minecraft.util.Mth.wrapDegrees((float) (this.targetYaw + effectiveDeltaYaw * 0.15));
+        this.targetPitch = (float) Math.max(-89.9, Math.min(89.9, this.targetPitch + effectiveDeltaPitch * 0.15));
+
+        if (stabilizationStrength <= 0.01) {
+            this.yaw = this.targetYaw;
+            this.pitch = this.targetPitch;
+        }
 
         if (flightStyle == CameraFlightStyle.FPV_DRONE) {
             // 穿越机航模视角：转弯微幅动力学侧倾联动，提供真机倾侧飞行感
-            this.bankRoll = Math.max(-30.0F, Math.min(30.0F, (float) (-deltaYaw * 0.6)));
+            this.bankRoll = Math.max(-30.0F, Math.min(30.0F, (float) (-effectiveDeltaYaw * 0.6)));
         } else {
             // 防抖平稳视角：彻底禁用任何转向侧倾晃动，保持地平线绝对水平稳固！
             this.bankRoll = 0.0F;
@@ -320,7 +391,7 @@ public final class FpvFlightController {
     }
 
     /**
-     * 动力学帧更新（包含油门推力、空气阻尼滑翔、以及侧倾平滑衰减）。
+     * 动力学帧更新（包含油门推力、液压云台视角平滑滤波、空气阻尼滑翔、以及侧倾平滑衰减）。
      *
      * @param dt 帧间隔时间（秒）
      */
@@ -371,12 +442,11 @@ public final class FpvFlightController {
 
         // 2. 模拟速度推进与阻尼（根据当前运镜风格区分：三轴防抖云台 vs 穿越机气动惯性）
         if (flightStyle == CameraFlightStyle.STABILIZED) {
-            // 防抖平稳视角（三轴云台/轨道推车稳态物理）：
-            // 平滑线性逼近目标航速：低速时起步极为柔和细腻，轻点 A/D 键仅微移极小距离，绝不突兀跳跃；
-            // 松开按键时指数急速刹停，彻底消除冰面滑行漂移感
+            // 防抖平稳视角（三轴云台/匀速轨道推车稳态物理）：
+            // 平滑线性逼近目标航速：推拉过程保持绝对匀速直线推进
             if (thrustVector.lengthSqr() > 1e-4) {
                 Vec3 targetVel = thrustVector.normalize().scale(currentMaxSpeed);
-                double accelRate = Math.min(10.0, Math.max(3.5, currentMaxSpeed * 1.5));
+                double accelRate = 8.0;
                 double accelFactor = 1.0 - Math.exp(-accelRate * dt);
                 velocity = velocity.lerp(targetVel, accelFactor);
             } else {
@@ -388,7 +458,6 @@ public final class FpvFlightController {
             }
         } else {
             // 穿越机航模视角（气动推力与滑翔漂移惯性）：
-            // 推力加速度积分与空气阻尼滑翔
             if (thrustVector.lengthSqr() > 1e-4) {
                 thrustVector = thrustVector.normalize().scale(currentMaxSpeed * 3.5); // 加速度
             }
@@ -411,14 +480,24 @@ public final class FpvFlightController {
 
         // 4. 侧倾姿态结算
         if (flightStyle == CameraFlightStyle.STABILIZED) {
-            // 防抖模式下：bankRoll 锁定 0，roll 平滑阻尼锁定至 manualRoll（默认 0° 绝对水平）
             bankRoll = 0.0F;
             roll = (float) DampedValue.update(roll, manualRoll, 14.0, dt);
         } else {
-            // 穿越机模式下：bankRoll 瞬时气动侧倾衰减归零，与 manualRoll 叠加
             bankRoll = (float) DampedValue.update(bankRoll, 0.0, 5.0, dt);
             float effectiveTargetRoll = manualRoll + bankRoll;
             roll = (float) DampedValue.update(roll, effectiveTargetRoll, 10.0, dt);
+        }
+
+        // 4.5 电影级液压云台视角平滑旋转（临界阻尼指数追踪 targetYaw / targetPitch，彻底抹平鼠标微晃手抖）
+        if (stabilizationStrength > 0.01 && (lookAtTarget == null || !lookAtTarget.isAlive())) {
+            double trackingSpeed = net.minecraft.util.Mth.lerp(stabilizationStrength, 32.0, 7.5);
+            double rotFactor = 1.0 - Math.exp(-trackingSpeed * dt);
+            float dYaw = net.minecraft.util.Mth.wrapDegrees(this.targetYaw - this.yaw);
+            this.yaw = net.minecraft.util.Mth.wrapDegrees((float) (this.yaw + dYaw * rotFactor));
+            this.pitch = (float) (this.pitch + (this.targetPitch - this.pitch) * rotFactor);
+        } else if (lookAtTarget == null || !lookAtTarget.isAlive()) {
+            this.yaw = this.targetYaw;
+            this.pitch = this.targetPitch;
         }
 
         // 5. 若有注视目标，实时跟踪瞄准

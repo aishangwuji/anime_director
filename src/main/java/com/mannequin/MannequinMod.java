@@ -48,6 +48,17 @@ public final class MannequinMod {
                         }
                     });
                 }
+        ).playToServer(
+                com.mannequin.network.SyncMannequinScalePayload.TYPE,
+                com.mannequin.network.SyncMannequinScalePayload.STREAM_CODEC,
+                (payload, context) -> {
+                    context.enqueueWork(() -> {
+                        net.minecraft.world.entity.Entity entity = context.player().level().getEntity(payload.entityId());
+                        if (entity instanceof com.mannequin.entity.MannequinEntity mannequin) {
+                            mannequin.setScale(payload.scale());
+                        }
+                    });
+                }
         );
     }
 

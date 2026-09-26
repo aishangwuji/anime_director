@@ -192,29 +192,18 @@ public class MannequinEntity extends Entity {
                 || stack.is(com.mannequin.registry.ModItems.MANNEQUIN_REMOVER.get());
 
         if (isDirectorWand) {
-            if (player.isShiftKeyDown()) {
-                // Shift + 右键人偶：安全回收此人偶实体并清除其运动轨迹！
-                if (!level().isClientSide()) {
-                    discard();
-                    level().playSound(null, getX(), getY(), getZ(), net.minecraft.sounds.SoundEvents.ITEM_BREAK, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.2F);
-                    if (level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                        serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, getX(), getY() + 1.0, getZ(), 10, 0.2, 0.5, 0.2, 0.05);
-                    }
-                    player.displayClientMessage(net.minecraft.network.chat.Component.literal("§e[导演工杖] 已回收该人偶并清理其运动轨迹！"), true);
-                } else {
-                    ClientRemovalHelper.cleanupTrack(getUUID().toString());
+            // 右键人偶：安全回收此人偶实体并清除其运动轨迹！
+            if (!level().isClientSide()) {
+                discard();
+                level().playSound(null, getX(), getY(), getZ(), net.minecraft.sounds.SoundEvents.ITEM_BREAK, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.2F);
+                if (level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                    serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, getX(), getY() + 1.0, getZ(), 10, 0.2, 0.5, 0.2, 0.05);
                 }
-                return InteractionResult.sidedSuccess(level().isClientSide());
+                player.displayClientMessage(net.minecraft.network.chat.Component.literal("§e[导演工杖] 已回收该人偶并清理其运动轨迹！"), true);
             } else {
-                // 普通右键人偶：循环调整人偶模型体型大小（100%标准 -> 巨物/微缩场景）
-                if (!level().isClientSide()) {
-                    float newScale = cycleScale();
-                    String desc = getScaleDescription(newScale);
-                    player.displayClientMessage(net.minecraft.network.chat.Component.literal("§6[人偶体型] 比例已调整为: §e" + (int) (newScale * 100) + "% §7(" + desc + ")"), true);
-                    level().playSound(null, getX(), getY(), getZ(), net.minecraft.sounds.SoundEvents.EXPERIENCE_ORB_PICKUP, net.minecraft.sounds.SoundSource.PLAYERS, 0.8F, newScale >= 1.0F ? 1.0F : 1.3F);
-                }
-                return InteractionResult.sidedSuccess(level().isClientSide());
+                ClientRemovalHelper.cleanupTrack(getUUID().toString());
             }
+            return InteractionResult.sidedSuccess(level().isClientSide());
         }
 
         // 1. 空手/其他物品 + 潜行右键：循环切换 6 大经典动作姿态预设
