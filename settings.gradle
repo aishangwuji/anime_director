@@ -1,0 +1,19 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven {
+            name = 'NeoForged'
+            url = 'https://maven.neoforged.net/releases'
+        }
+    }
+}
+
+plugins {
+    // Business Rule: NeoForge 1.21.1 compiles against Java 21, but this
+    // workstation only ships JDK 17 and JDK 25. The foojay resolver lets
+    // Gradle provision a matching JDK 21 toolchain automatically instead of
+    // requiring a manual install.
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
+
+rootProject.name = 'McMod'
