@@ -352,7 +352,7 @@ public final class MasterClockEngine {
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
                 if (net.neoforged.fml.loading.FMLPaths.CONFIGDIR != null && net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get() != null) {
-                    java.nio.file.Path dir = net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("mannequin");
+                    java.nio.file.Path dir = net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve(com.mannequin.MannequinMod.MOD_ID);
                     java.nio.file.Files.createDirectories(dir);
                     net.minecraft.nbt.NbtIo.writeCompressed(root, dir.resolve("last_scene.nbt"));
                 }

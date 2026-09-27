@@ -25,7 +25,7 @@ public class NoopRenderer<T extends Entity> extends EntityRenderer<T> {
     }
 
     private static final ResourceLocation DUMMY =
-            ResourceLocation.fromNamespaceAndPath("mannequin", "textures/entity/camera_anchor.png");
+            com.mannequin.MannequinMod.id("textures/entity/camera_anchor.png");
 
     @Override
     public ResourceLocation getTextureLocation(T entity) {

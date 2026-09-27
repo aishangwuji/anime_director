@@ -12,198 +12,198 @@ import org.lwjgl.glfw.GLFW;
  */
 public final class ModKeyMappings {
 
-    public static final String CATEGORY_MANNEQUIN = "key.categories.mannequin";
+    public static final String CATEGORY_ANIME_DIRECTOR = "key.categories.anime_director";
 
     /** 切换导演相机自由飞控模式 */
     public static final KeyMapping TOGGLE_CAMERA = new KeyMapping(
-            "key.mannequin.toggle_camera",
+            "key.anime_director.toggle_camera",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F6,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 一键在「场景搭建模式」与「运镜实拍模式」之间原子级切换（默认 F4 键） */
     public static final KeyMapping TOGGLE_WORKSPACE_MODE = new KeyMapping(
-            "key.mannequin.toggle_workspace_mode",
+            "key.anime_director.toggle_workspace_mode",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F4,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 在当前位置打下一个机位关键帧 / 开启附身动捕录制 */
     public static final KeyMapping ADD_KEYFRAME = new KeyMapping(
-            "key.mannequin.add_keyframe",
+            "key.anime_director.add_keyframe",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_K,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 启动/暂停机械滑轨与全场排演播放（使用 P 键，避免与原版 Enter 聊天键冲突） */
     public static final KeyMapping START_DOLLY = new KeyMapping(
-            "key.mannequin.start_dolly",
+            "key.anime_director.start_dolly",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_P,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 机械滑轨与全场演员一键倒带复位回第 0 秒 */
     public static final KeyMapping RESET_DOLLY = new KeyMapping(
-            "key.mannequin.reset_dolly",
+            "key.anime_director.reset_dolly",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_R,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 清空当前所有机位关键帧 */
     public static final KeyMapping CLEAR_TRACK = new KeyMapping(
-            "key.mannequin.clear_track",
+            "key.anime_director.clear_track",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_DELETE,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 循环切换 9:16 / 16:9 / 21:9 构图画幅遮罩 */
     public static final KeyMapping TOGGLE_ASPECT_RATIO = new KeyMapping(
-            "key.mannequin.toggle_aspect_ratio",
+            "key.anime_director.toggle_aspect_ratio",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_V,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 附身受控人偶或载具 / 退出附身归还视角 */
     public static final KeyMapping TOGGLE_POSSESSION = new KeyMapping(
-            "key.mannequin.toggle_possession",
+            "key.anime_director.toggle_possession",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_G,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 镜头向左倾斜（Dutch Angle 左滚转） */
     public static final KeyMapping ROLL_LEFT = new KeyMapping(
-            "key.mannequin.roll_left",
+            "key.anime_director.roll_left",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_Z,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 镜头向右倾斜（Dutch Angle 右滚转） */
     public static final KeyMapping ROLL_RIGHT = new KeyMapping(
-            "key.mannequin.roll_right",
+            "key.anime_director.roll_right",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_X,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 镜头倾斜角一键回正复位 */
     public static final KeyMapping RESET_ROLL = new KeyMapping(
-            "key.mannequin.reset_roll",
+            "key.anime_director.reset_roll",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_N,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 镜头焦距拉长 / 特写变焦（FOV 减小） */
     public static final KeyMapping ZOOM_IN = new KeyMapping(
-            "key.mannequin.zoom_in",
+            "key.anime_director.zoom_in",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_PAGE_UP,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 镜头焦距缩短 / 广角变焦（FOV 增大） */
     public static final KeyMapping ZOOM_OUT = new KeyMapping(
-            "key.mannequin.zoom_out",
+            "key.anime_director.zoom_out",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_PAGE_DOWN,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 延长场景时长 */
     public static final KeyMapping INCREASE_DURATION = new KeyMapping(
-            "key.mannequin.increase_duration",
+            "key.anime_director.increase_duration",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_RIGHT_BRACKET,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 缩短场景时长 */
     public static final KeyMapping DECREASE_DURATION = new KeyMapping(
-            "key.mannequin.decrease_duration",
+            "key.anime_director.decrease_duration",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_LEFT_BRACKET,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 展开/折叠漫剧导演新手引导手册 */
     public static final KeyMapping TOGGLE_GUIDE = new KeyMapping(
-            "key.mannequin.toggle_guide",
+            "key.anime_director.toggle_guide",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_H,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 开启/关闭屏幕操作指引与浮窗提示 (HUD Tips) */
     public static final KeyMapping TOGGLE_HUD_TIPS = new KeyMapping(
-            "key.mannequin.toggle_hud_tips",
+            "key.anime_director.toggle_hud_tips",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F7,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 显隐导演玩家本体模型（上帝视角下默认隐藏） */
     public static final KeyMapping TOGGLE_PLAYER_VISIBILITY = new KeyMapping(
-            "key.mannequin.toggle_player_visibility",
+            "key.anime_director.toggle_player_visibility",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F8,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 呼出导演全功能快捷操作中心 / 动作轮盘菜单（默认 C 键，可在原版按键设置中自定义改键） */
     public static final KeyMapping QUICK_MENU = new KeyMapping(
-            "key.mannequin.quick_menu",
+            "key.anime_director.quick_menu",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_C,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 在当前上帝视角/穿越机视角打下一个分镜拍摄机位（默认 B 键） */
     public static final KeyMapping ADD_CAMERA_STATION = new KeyMapping(
-            "key.mannequin.add_camera_station",
+            "key.anime_director.add_camera_station",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_B,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 切换导演运镜风格：防抖平稳视角 vs 穿越机航模视角（默认 F9 键） */
     public static final KeyMapping TOGGLE_CAMERA_STYLE = new KeyMapping(
-            "key.mannequin.toggle_camera_style",
+            "key.anime_director.toggle_camera_style",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F9,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 开启/停止主视角实时运镜录制并直出 MP4 (默认 F10 键) */
     public static final KeyMapping RECORD_LIVE_POV = new KeyMapping(
-            "key.mannequin.record_live_pov",
+            "key.anime_director.record_live_pov",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_F10,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 循环切换自由相机多档位航速预设 (默认 J 键) */
     public static final KeyMapping CYCLE_SPEED_GEAR = new KeyMapping(
-            "key.mannequin.cycle_speed_gear",
+            "key.anime_director.cycle_speed_gear",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_J,
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     /** 呼出片场配乐与背景曲库管理界面 (默认未绑定，用户可在控制中自由绑定) */
     public static final KeyMapping TOGGLE_MUSIC = new KeyMapping(
-            "key.mannequin.toggle_music",
+            "key.anime_director.toggle_music",
             InputConstants.Type.KEYSYM,
             InputConstants.UNKNOWN.getValue(),
-            CATEGORY_MANNEQUIN
+            CATEGORY_ANIME_DIRECTOR
     );
 
     private ModKeyMappings() {

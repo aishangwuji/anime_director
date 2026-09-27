@@ -17,7 +17,7 @@ import net.neoforged.fml.common.Mod;
 @Mod(MannequinMod.MOD_ID)
 public final class MannequinMod {
 
-    public static final String MOD_ID = "mannequin";
+    public static final String MOD_ID = "anime_director";
 
     public MannequinMod(IEventBus modEventBus, ModContainer modContainer) {
         ModEntityTypes.register(modEventBus);
