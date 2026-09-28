@@ -42,7 +42,7 @@ public class MannequinRenderer extends EntityRenderer<MannequinEntity> {
         this.model.setupAnim(entity, limbSwing, limbSwingAmount, entity.tickCount + partialTick, 0.0F, entity.getXRot());
 
         int effectiveLight = entity.isUnlit() ? net.minecraft.client.renderer.LightTexture.FULL_BRIGHT : packedLight;
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityCutout(TEXTURE));
+        VertexConsumer buffer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
         this.model.renderToBuffer(poseStack, buffer, effectiveLight, OverlayTexture.NO_OVERLAY,
                 entity.getColor().argb());
         poseStack.popPose();

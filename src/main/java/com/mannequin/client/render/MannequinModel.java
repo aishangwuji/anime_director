@@ -169,34 +169,34 @@ public class MannequinModel extends EntityModel<MannequinEntity> {
             // 逆时针顶点顺序（法线朝向外侧）
             buffer.addVertex(pose, x0, 0.0F, z0)
                     .setColor(color)
-                    .setUv(0.0F, 0.0F)
+                    .setUv(0.5F, 0.5F)
                     .setOverlay(packedOverlay)
                     .setLight(packedLight)
                     .setNormal(lastPose, nx0, 0.0F, nz0);
 
             buffer.addVertex(pose, x1, 0.0F, z1)
                     .setColor(color)
-                    .setUv(0.0F, 0.0F)
+                    .setUv(0.5F, 0.5F)
                     .setOverlay(packedOverlay)
                     .setLight(packedLight)
                     .setNormal(lastPose, nx1, 0.0F, nz1);
 
             buffer.addVertex(pose, x1, this.height, z1)
                     .setColor(color)
-                    .setUv(0.0F, 0.0F)
+                    .setUv(0.5F, 0.5F)
                     .setOverlay(packedOverlay)
                     .setLight(packedLight)
                     .setNormal(lastPose, nx1, 0.0F, nz1);
 
             buffer.addVertex(pose, x0, this.height, z0)
                     .setColor(color)
-                    .setUv(0.0F, 0.0F)
+                    .setUv(0.5F, 0.5F)
                     .setOverlay(packedOverlay)
                     .setLight(packedLight)
                     .setNormal(lastPose, nx0, 0.0F, nz0);
         }
 
-        // 2. 顶盖圆盘（法线朝上 +Y）
+        // 2. 顶盖圆盘（逆时针 CCW，法线严格朝上 +Y）
         for (int i = 0; i < SEGMENTS; i++) {
             int next = (i + 1) % SEGMENTS;
             float x0 = this.radius * SIN[i];
@@ -204,36 +204,37 @@ public class MannequinModel extends EntityModel<MannequinEntity> {
             float x1 = this.radius * SIN[next];
             float z1 = this.radius * COS[next];
 
+            // 顺次: 中心 -> (x0, z0) -> (x1, z1) -> 中心 (自上向下看为逆时针)
             buffer.addVertex(pose, 0.0F, this.height, 0.0F)
                     .setColor(color)
-                    .setUv(0.0F, 0.0F)
-                    .setOverlay(packedOverlay)
-                    .setLight(packedLight)
-                    .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
-
-            buffer.addVertex(pose, x1, this.height, z1)
-                    .setColor(color)
-                    .setUv(0.0F, 0.0F)
+                    .setUv(0.5F, 0.5F)
                     .setOverlay(packedOverlay)
                     .setLight(packedLight)
                     .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
 
             buffer.addVertex(pose, x0, this.height, z0)
                     .setColor(color)
-                    .setUv(0.0F, 0.0F)
+                    .setUv(0.5F, 0.5F)
+                    .setOverlay(packedOverlay)
+                    .setLight(packedLight)
+                    .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
+
+            buffer.addVertex(pose, x1, this.height, z1)
+                    .setColor(color)
+                    .setUv(0.5F, 0.5F)
                     .setOverlay(packedOverlay)
                     .setLight(packedLight)
                     .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
 
             buffer.addVertex(pose, 0.0F, this.height, 0.0F)
                     .setColor(color)
-                    .setUv(0.0F, 0.0F)
+                    .setUv(0.5F, 0.5F)
                     .setOverlay(packedOverlay)
                     .setLight(packedLight)
                     .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
         }
 
-        // 3. 底盖圆盘（法线朝下 -Y）
+        // 3. 底盖圆盘（自下向上看为逆时针 CCW，法线严格朝下 -Y）
         for (int i = 0; i < SEGMENTS; i++) {
             int next = (i + 1) % SEGMENTS;
             float x0 = this.radius * SIN[i];
@@ -243,28 +244,28 @@ public class MannequinModel extends EntityModel<MannequinEntity> {
 
             buffer.addVertex(pose, 0.0F, 0.0F, 0.0F)
                     .setColor(color)
-                    .setUv(0.0F, 0.0F)
+                    .setUv(0.5F, 0.5F)
+                    .setOverlay(packedOverlay)
+                    .setLight(packedLight)
+                    .setNormal(lastPose, 0.0F, -1.0F, 0.0F);
+
+            buffer.addVertex(pose, x1, 0.0F, z1)
+                    .setColor(color)
+                    .setUv(0.5F, 0.5F)
                     .setOverlay(packedOverlay)
                     .setLight(packedLight)
                     .setNormal(lastPose, 0.0F, -1.0F, 0.0F);
 
             buffer.addVertex(pose, x0, 0.0F, z0)
                     .setColor(color)
-                    .setUv(0.0F, 0.0F)
-                    .setOverlay(packedOverlay)
-                    .setLight(packedLight)
-                    .setNormal(lastPose, 0.0F, -1.0F, 0.0F);
-
-            buffer.addVertex(pose, x1, 0.0F, z1)
-                    .setColor(color)
-                    .setUv(0.0F, 0.0F)
+                    .setUv(0.5F, 0.5F)
                     .setOverlay(packedOverlay)
                     .setLight(packedLight)
                     .setNormal(lastPose, 0.0F, -1.0F, 0.0F);
 
             buffer.addVertex(pose, 0.0F, 0.0F, 0.0F)
                     .setColor(color)
-                    .setUv(0.0F, 0.0F)
+                    .setUv(0.5F, 0.5F)
                     .setOverlay(packedOverlay)
                     .setLight(packedLight)
                     .setNormal(lastPose, 0.0F, -1.0F, 0.0F);
@@ -280,36 +281,37 @@ public class MannequinModel extends EntityModel<MannequinEntity> {
         Matrix4f pose = poseStack.last().pose();
         PoseStack.Pose lastPose = poseStack.last();
         int indicatorColor = 0xD0FFFFFF;
-        float topY = this.height + 0.002F;
+        float topY = this.height + 0.003F;
 
         float tipZ = this.radius * 0.85F;
         float baseZ = this.radius * 0.15F;
         float wingX = this.radius * 0.45F;
 
+        // 逆时针顺次: tip (0, topY, tipZ) -> -wingX -> wingX -> tip
         buffer.addVertex(pose, 0.0F, topY, tipZ)
                 .setColor(indicatorColor)
-                .setUv(0.0F, 0.0F)
-                .setOverlay(packedOverlay)
-                .setLight(packedLight)
-                .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
-
-        buffer.addVertex(pose, wingX, topY, baseZ)
-                .setColor(indicatorColor)
-                .setUv(0.0F, 0.0F)
+                .setUv(0.5F, 0.5F)
                 .setOverlay(packedOverlay)
                 .setLight(packedLight)
                 .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
 
         buffer.addVertex(pose, -wingX, topY, baseZ)
                 .setColor(indicatorColor)
-                .setUv(0.0F, 0.0F)
+                .setUv(0.5F, 0.5F)
+                .setOverlay(packedOverlay)
+                .setLight(packedLight)
+                .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
+
+        buffer.addVertex(pose, wingX, topY, baseZ)
+                .setColor(indicatorColor)
+                .setUv(0.5F, 0.5F)
                 .setOverlay(packedOverlay)
                 .setLight(packedLight)
                 .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
 
         buffer.addVertex(pose, 0.0F, topY, tipZ)
                 .setColor(indicatorColor)
-                .setUv(0.0F, 0.0F)
+                .setUv(0.5F, 0.5F)
                 .setOverlay(packedOverlay)
                 .setLight(packedLight)
                 .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
