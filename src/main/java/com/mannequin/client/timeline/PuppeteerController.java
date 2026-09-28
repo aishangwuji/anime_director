@@ -157,10 +157,29 @@ public final class PuppeteerController {
 
         String trackId = possessedEntity.getUUID().toString();
         String trackName = possessedEntity.getName().getString() + " 动捕轨";
-        MasterClockEngine.INSTANCE.getOrCreateTrack(trackId, trackName);
+        TimelineTrack track = MasterClockEngine.INSTANCE.getOrCreateTrack(trackId, trackName);
 
         this.isRecording = true;
+
+        // 核心关键：开启录制瞬间清空玩偶残余动量，并将其当前精准位置确立为该玩偶的绝对默认起始点 (Frame 0)
+        possessedEntity.setDeltaMovement(Vec3.ZERO);
+        if (possessedEntity instanceof LivingEntity living) {
+            living.xxa = 0.0F;
+            living.zza = 0.0F;
+        }
+
         MasterClockEngine.INSTANCE.startRecording(trackId);
+
+        // 立即存入第 0 帧作为该玩偶的站桩基准原点
+        track.recordFrame(new MotionFrame(
+                0,
+                possessedEntity.position(),
+                possessedEntity.getXRot(),
+                possessedEntity.getYRot(),
+                0.0F,
+                70.0F,
+                false
+        ));
     }
 
     /**
@@ -168,8 +187,73 @@ public final class PuppeteerController {
      */
     public void stopRecordingMoCap() {
         if (isRecording) {
-            this.isRecording = false;
             MasterClockEngine.INSTANCE.stopRecording();
+        }
+    }
+
+    /**
+     * 动捕录制结束统一处理：清空惯性运动、物理强制归位初始定义点、安全交还视角并通知服务端。
+     */
+    public void onRecordingFinished() {
+        if (!isRecording && !isPossessing()) {
+            return;
+        }
+
+        this.isRecording = false;
+
+        if (possessedEntity != null && possessedEntity.isAlive()) {
+            Minecraft mc = Minecraft.getInstance();
+            TimelineTrack track = MasterClockEngine.INSTANCE.getTracks().get(possessedEntity.getUUID().toString());
+            MotionFrame initialFrame = (track != null) ? track.getInitialFrame() : null;
+
+            // 1. 彻底清空实体的物理惯性与残余运动量
+            possessedEntity.setDeltaMovement(Vec3.ZERO);
+            if (possessedEntity instanceof LivingEntity living) {
+                living.xxa = 0.0F;
+                living.zza = 0.0F;
+            }
+
+            // 2. 强力复位至开启录制时的默认定义起始位置 (Frame 0)
+            if (initialFrame != null) {
+                Vec3 startPos = initialFrame.position();
+                possessedEntity.setPos(startPos.x, startPos.y, startPos.z);
+                possessedEntity.xo = startPos.x;
+                possessedEntity.yo = startPos.y;
+                possessedEntity.zo = startPos.z;
+                possessedEntity.setYRot(initialFrame.yaw());
+                possessedEntity.setXRot(initialFrame.pitch());
+                possessedEntity.yRotO = initialFrame.yaw();
+                possessedEntity.xRotO = initialFrame.pitch();
+
+                if (possessedEntity instanceof LivingEntity living) {
+                    living.setYHeadRot(initialFrame.yaw());
+                    living.setYBodyRot(initialFrame.yaw());
+                    living.yHeadRotO = initialFrame.yaw();
+                    living.yBodyRotO = initialFrame.yaw();
+                }
+
+                // 即时向服务端同步原点坐标与零速度，杜绝回弹与残余位移
+                if (mc.getConnection() != null) {
+                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                            new com.mannequin.network.SyncMannequinPosPayload(
+                                    possessedEntity.getId(),
+                                    startPos.x, startPos.y, startPos.z,
+                                    initialFrame.yaw(), initialFrame.pitch(),
+                                    0.0, 0.0, 0.0
+                            )
+                    );
+                }
+            }
+
+            // 3. 录制完成自动安全退出附身，将控制权与相机交还导演，杜绝手指残留键盘输入导致玩偶跑偏
+            releasePossession();
+
+            if (mc.player != null) {
+                mc.player.displayClientMessage(
+                        Component.literal("§a[导演系统] 动捕录制完成！玩偶已归位至初始定义点，按 [P] 即可原地回放排演。"),
+                        true
+                );
+            }
         }
     }
 

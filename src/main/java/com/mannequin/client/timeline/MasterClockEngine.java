@@ -207,6 +207,10 @@ public final class MasterClockEngine {
      */
     public void play() {
         if (state == State.STOPPED) {
+            // 若当前时间轴已到达或超出总时长，自动从第 0 秒重头倒带回放
+            if (currentTick >= totalDurationTicks) {
+                rewindToStart();
+            }
             // 若当前内存中无轨道，自动尝试从本地磁盘恢复上一场排演数据
             if (tracks.isEmpty()) {
                 loadFromDisk();
@@ -247,6 +251,9 @@ public final class MasterClockEngine {
         if (state == State.RECORDING) {
             state = State.STOPPED;
             activeRecordingTrackId = null;
+
+            // 联动通知提线木偶控制器结束录制，归位并退出附身
+            PuppeteerController.INSTANCE.onRecordingFinished();
 
             // 自动将总时长自适应扩展至本次录制的最大帧长度（向上对齐到整秒，最低 60 ticks = 3 秒）
             int maxTrackTick = 0;
@@ -417,6 +424,35 @@ public final class MasterClockEngine {
         currentTick = 0;
         playbackTime = 0.0;
         applyTrackStatesToWorld(0, 0.0F);
+
+        // 同步所有实体的第 0 秒静止状态到服务端，杜绝服务端位置校验回弹
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.getConnection() != null && mc.level != null) {
+            for (TimelineTrack track : tracks.values()) {
+                if (track.getTrackId().equals(CAMERA_TRACK_ID)) continue;
+                MotionFrame f0 = track.getInitialFrame();
+                if (f0 != null) {
+                    try {
+                        UUID uuid = UUID.fromString(track.getTrackId());
+                        for (Entity e : mc.level.entitiesForRendering()) {
+                            if (e.getUUID().equals(uuid)) {
+                                e.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+                                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                                        new com.mannequin.network.SyncMannequinPosPayload(
+                                                e.getId(),
+                                                f0.position().x, f0.position().y, f0.position().z,
+                                                f0.yaw(), f0.pitch(),
+                                                0.0, 0.0, 0.0
+                                        )
+                                );
+                                break;
+                            }
+                        }
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -529,12 +565,23 @@ public final class MasterClockEngine {
             }
 
             if (entity != null) {
-                // 覆写实体空间坐标与朝向
+                // 覆写实体空间坐标与朝向，并彻底清空残余运动属性与渲染插值跳跃
                 entity.setPos(frame.position().x, frame.position().y, frame.position().z);
+                entity.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+                entity.xo = frame.position().x;
+                entity.yo = frame.position().y;
+                entity.zo = frame.position().z;
                 entity.setYRot(frame.yaw());
                 entity.setXRot(frame.pitch());
                 entity.yRotO = frame.yaw();
                 entity.xRotO = frame.pitch();
+
+                if (entity instanceof net.minecraft.world.entity.LivingEntity living) {
+                    living.setYHeadRot(frame.yaw());
+                    living.setYBodyRot(frame.yaw());
+                    living.yHeadRotO = frame.yaw();
+                    living.yBodyRotO = frame.yaw();
+                }
             }
         } catch (IllegalArgumentException ignored) {
             // 非 UUID 标识的实体轨道忽略

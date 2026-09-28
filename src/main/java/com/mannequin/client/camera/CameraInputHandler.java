@@ -125,6 +125,9 @@ public final class CameraInputHandler {
 
         // 启动/暂停排演回放 (P 键)
         if (ModKeyMappings.START_DOLLY.consumeClick()) {
+            if (PuppeteerController.INSTANCE.isPossessing()) {
+                PuppeteerController.INSTANCE.releasePossession();
+            }
             if (MasterClockEngine.INSTANCE.getState() == MasterClockEngine.State.PLAYING) {
                 MasterClockEngine.INSTANCE.pause();
             } else {
@@ -134,6 +137,9 @@ public final class CameraInputHandler {
 
         // 一键倒带复位至第 0 秒 (R 键)
         if (ModKeyMappings.RESET_DOLLY.consumeClick()) {
+            if (PuppeteerController.INSTANCE.isPossessing()) {
+                PuppeteerController.INSTANCE.releasePossession();
+            }
             MasterClockEngine.INSTANCE.rewindToStart();
         }
 
