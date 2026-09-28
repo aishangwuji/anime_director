@@ -47,7 +47,7 @@ public class MannequinRenderer extends EntityRenderer<MannequinEntity> {
                 entity.getColor().argb());
         poseStack.popPose();
 
-        this.shadowRadius = entity.isUnlit() ? 0.0F : (0.5F * scale);
+        this.shadowRadius = entity.isUnlit() ? 0.0F : (0.35F * scale);
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
     }
 

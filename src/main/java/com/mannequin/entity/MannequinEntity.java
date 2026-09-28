@@ -84,7 +84,7 @@ public class MannequinEntity extends Entity {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(DATA_COLOR, (byte) MannequinColor.WHITE.ordinal());
         builder.define(DATA_UNLIT, false);
-        builder.define(DATA_POSE, (byte) MannequinPose.REST.ordinal());
+        builder.define(DATA_POSE, (byte) MannequinPose.STANDING.ordinal());
         builder.define(DATA_SCALE, 1.0F);
     }
 
@@ -138,13 +138,24 @@ public class MannequinEntity extends Entity {
 
     @Override
     public net.minecraft.world.entity.EntityDimensions getDimensions(net.minecraft.world.entity.Pose pose) {
-        return net.minecraft.world.entity.EntityDimensions.scalable(0.6F, 1.8F).withEyeHeight(1.65F).scale(getScale());
+        float width = 0.6F;
+        float height = 1.8F;
+        MannequinPose currentPose = getMannequinPose();
+        if (currentPose == MannequinPose.LYING) {
+            width = 1.8F;
+            height = 0.6F;
+        } else if (currentPose == MannequinPose.CROUCHING) {
+            height = 1.1F;
+        }
+        return net.minecraft.world.entity.EntityDimensions.scalable(width, height)
+                .withEyeHeight(height * 0.85F)
+                .scale(getScale());
     }
 
     @Override
     public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);
-        if (DATA_SCALE.equals(key)) {
+        if (DATA_SCALE.equals(key) || DATA_POSE.equals(key)) {
             refreshDimensions();
         }
     }
@@ -177,6 +188,7 @@ public class MannequinEntity extends Entity {
 
     public void setMannequinPose(MannequinPose pose) {
         entityData.set(DATA_POSE, (byte) pose.ordinal());
+        refreshDimensions();
     }
 
     /**
@@ -205,7 +217,7 @@ public class MannequinEntity extends Entity {
             if (!level().isClientSide()) {
                 MannequinPose nextPose = MannequinPose.byId((getMannequinPose().ordinal() + 1) % MannequinPose.values().length);
                 setMannequinPose(nextPose);
-                player.displayClientMessage(net.minecraft.network.chat.Component.literal("§a[人偶姿态] 已切换为: §e" + nextPose.getDisplayName()), true);
+                player.displayClientMessage(net.minecraft.network.chat.Component.literal("§a[替身姿态] 已切换为: §e" + nextPose.getDisplayName()), true);
             }
             return InteractionResult.sidedSuccess(level().isClientSide());
         }
