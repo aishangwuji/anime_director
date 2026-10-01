@@ -164,7 +164,7 @@ public final class BuildingPreviewRenderer {
                 long volume = (long) size.getX() * size.getY() * size.getZ();
                 player.displayClientMessage(
                         Component.literal(String.format("§b[建筑蓝图仪] 已在视线空中设立角点 A: (%d, %d, %d)！选区尺寸: §e%d × %d × %d §7(共 %,d 方块)",
-                                airPos.getX(), airPos.getY(), airPos.getZ(), size.getX(), size.getY(), size.getZ())),
+                                airPos.getX(), airPos.getY(), airPos.getZ(), size.getX(), size.getY(), size.getZ(), volume)),
                         true
                 );
             } else {
