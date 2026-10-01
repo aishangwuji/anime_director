@@ -43,7 +43,10 @@ public final class DirectorWandHelper {
         for (MannequinEntity mannequin : list) {
             serverLevel.sendParticles(ParticleTypes.POOF, mannequin.getX(), mannequin.getY() + 1.0, mannequin.getZ(), 8, 0.2, 0.5, 0.2, 0.05);
             if (player != null && !player.getAbilities().instabuild) {
-                mannequin.spawnAtLocation(ModItems.MANNEQUIN_SPAWN.get());
+                net.minecraft.world.item.Item drop = mannequin.getMannequinPose() == com.mannequin.entity.MannequinPose.LYING
+                        ? ModItems.MANNEQUIN_LYING_SPAWN.get()
+                        : ModItems.MANNEQUIN_SPAWN.get();
+                mannequin.spawnAtLocation(drop);
             }
             mannequin.discard();
         }
@@ -66,7 +69,10 @@ public final class DirectorWandHelper {
         Level level = mannequin.level();
         if (!level.isClientSide()) {
             if (player != null && !player.getAbilities().instabuild) {
-                mannequin.spawnAtLocation(ModItems.MANNEQUIN_SPAWN.get());
+                net.minecraft.world.item.Item drop = mannequin.getMannequinPose() == com.mannequin.entity.MannequinPose.LYING
+                        ? ModItems.MANNEQUIN_LYING_SPAWN.get()
+                        : ModItems.MANNEQUIN_SPAWN.get();
+                mannequin.spawnAtLocation(drop);
             }
             mannequin.discard();
             level.playSound(null, mannequin.getX(), mannequin.getY(), mannequin.getZ(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0F, 1.2F);
@@ -82,7 +88,7 @@ public final class DirectorWandHelper {
     }
 
     /**
-     * 在指定方块坐标生成一个 100% 标准基准人偶。
+     * 在指定方块坐标生成一个 100% 标准基准立式人偶。
      */
     public static boolean spawnMannequin(Level level, Player player, BlockPos spawnPos, float yaw) {
         if (level.isClientSide()) {
@@ -99,7 +105,31 @@ public final class DirectorWandHelper {
         level.addFreshEntity(mannequin);
         level.playSound(null, spawnPos, SoundEvents.ARMOR_STAND_PLACE, SoundSource.PLAYERS, 1.0F, 1.0F);
         if (player != null) {
-            player.displayClientMessage(Component.literal("§a[导演工杖] 已放置标准人偶 (100%)！右键人偶可缩放体型，Shift+右键可回收。"), true);
+            player.displayClientMessage(Component.literal("§a[导演工杖] 已放置标准立式人偶 (100%)！右键人偶可回收，对准+Shift+滚轮可缩放体型。"), true);
+        }
+        return true;
+    }
+
+    /**
+     * 在指定方块坐标生成一个水平平躺圆柱替身人偶。
+     */
+    public static boolean spawnLyingMannequin(Level level, Player player, BlockPos spawnPos, float yaw) {
+        if (level.isClientSide()) {
+            return true;
+        }
+
+        EntityType<MannequinEntity> type = ModEntityTypes.MANNEQUIN.get();
+        MannequinEntity mannequin = type.create(level);
+        if (mannequin == null) {
+            return false;
+        }
+
+        mannequin.setMannequinPose(com.mannequin.entity.MannequinPose.LYING);
+        mannequin.moveTo(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, yaw, 0.0F);
+        level.addFreshEntity(mannequin);
+        level.playSound(null, spawnPos, SoundEvents.ARMOR_STAND_PLACE, SoundSource.PLAYERS, 1.0F, 1.0F);
+        if (player != null) {
+            player.displayClientMessage(Component.literal("§a[卧式导演工杖] 已放置水平平躺圆柱替身！右键人偶可回收，对准+Shift+滚轮可缩放体型。"), true);
         }
         return true;
     }

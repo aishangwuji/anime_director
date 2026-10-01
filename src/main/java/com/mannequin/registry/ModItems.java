@@ -21,6 +21,12 @@ public final class ModItems {
             ITEMS.register("mannequin_spawn", () -> new MannequinSpawnItem(new Item.Properties()));
 
     /**
+     * 漫剧导演专用卧式工杖道具（放置水平平躺圆柱替身）。
+     */
+    public static final DeferredItem<Item> MANNEQUIN_LYING_SPAWN =
+            ITEMS.register("mannequin_lying_spawn", () -> new com.mannequin.item.LyingMannequinSpawnItem(new Item.Properties()));
+
+    /**
      * 漫剧导演制作实训手册道具。
      */
     public static final DeferredItem<Item> DIRECTOR_GUIDEBOOK =
@@ -43,6 +49,7 @@ public final class ModItems {
     private static void addToCreativeTabs(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS || event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(MANNEQUIN_SPAWN);
+            event.accept(MANNEQUIN_LYING_SPAWN);
             event.accept(DIRECTOR_GUIDEBOOK);
             event.accept(BUILD_WAND);
         }

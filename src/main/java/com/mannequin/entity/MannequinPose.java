@@ -10,9 +10,12 @@ public enum MannequinPose {
     /** 标准直立站立姿态 */
     STANDING("直立站立"),
     /** 倒地平躺地面姿态 */
-    LYING("平躺地面"),
-    /** 紧凑压缩下蹲姿态 */
+    LYING("平躺地面");
+
+    /*
+    // 动作预设已下架注释：当前为圆柱体模型，无需动作预设
     CROUCHING("压缩下蹲");
+    */
 
     private final String displayName;
 

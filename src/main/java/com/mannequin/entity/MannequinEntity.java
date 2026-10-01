@@ -142,9 +142,13 @@ public class MannequinEntity extends Entity {
         if (currentPose == MannequinPose.LYING) {
             width = 1.8F;
             height = 0.6F;
-        } else if (currentPose == MannequinPose.CROUCHING) {
+        }
+        /*
+        // 动作预设下架注释
+        else if (currentPose == MannequinPose.CROUCHING) {
             height = 1.1F;
         }
+        */
         return net.minecraft.world.entity.EntityDimensions.scalable(width, height)
                 .withEyeHeight(height * (1.65F / 1.8F))
                 .scale(getScale());
@@ -201,7 +205,8 @@ public class MannequinEntity extends Entity {
     public InteractionResult interact(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        // 0. 潜行右键（无论手持工杖还是空手/其他物品）：循环切换经典动作姿态预设 (站立/坐姿/平躺/蹲伏/举手)
+        /*
+        // 0. 动作预设已下架注释：当前为纯圆柱几何体模型，无需动作预设轮转
         if (player.isShiftKeyDown()) {
             if (!level().isClientSide()) {
                 MannequinPose nextPose = MannequinPose.byId((getMannequinPose().ordinal() + 1) % MannequinPose.getValues().length);
@@ -210,9 +215,11 @@ public class MannequinEntity extends Entity {
             }
             return InteractionResult.sidedSuccess(level().isClientSide());
         }
+        */
 
-        // 1. 手持漫剧导演工杖 (MANNEQUIN_SPAWN) 直接右键人偶：精准回收删除该人偶并清除对应轨迹
-        boolean isDirectorWand = stack.is(com.mannequin.registry.ModItems.MANNEQUIN_SPAWN.get());
+        // 1. 手持漫剧导演工杖（立式或卧式）直接右键人偶：精准回收删除该人偶并清除对应轨迹
+        boolean isDirectorWand = stack.is(com.mannequin.registry.ModItems.MANNEQUIN_SPAWN.get())
+                || stack.is(com.mannequin.registry.ModItems.MANNEQUIN_LYING_SPAWN.get());
         if (isDirectorWand) {
             com.mannequin.item.DirectorWandHelper.recycleMannequin(this, player);
             return InteractionResult.sidedSuccess(level().isClientSide());

@@ -92,12 +92,15 @@ public class MannequinModel extends EntityModel<MannequinEntity> {
                 this.pitch = -90.0F; // 沿 X 轴翻倒平放
                 this.yOffset = this.radius; // 抬升一个半径高度，使圆柱底侧恰好贴紧地面
             }
+            /*
+            // 动作预设下架注释：当前为纯圆柱几何体模型
             case CROUCHING -> {
                 // 下蹲压缩：高度压缩至约 1.1 米的紧凑圆柱
                 this.height = 1.1F;
                 this.pitch = 0.0F;
                 this.yOffset = 0.0F;
             }
+            */
             case STANDING -> {
                 // 直立站立：标准人体 1.8 米高圆柱
                 this.height = 1.8F;

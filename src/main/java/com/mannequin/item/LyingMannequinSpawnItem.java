@@ -1,43 +1,34 @@
 package com.mannequin.item;
 
-import com.mannequin.entity.MannequinEntity;
-import com.mannequin.registry.ModEntityTypes;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
 import net.neoforged.fml.loading.FMLEnvironment;
 
 import java.util.List;
 
 /**
- * 漫剧导演专用全功能工杖（Director's Wand / Mannequin Multi-Tool）。
+ * 漫剧导演专用卧式工杖（Lying Director's Wand / Horizontal Stand-in Tool）。
  *
- * <p>业务规则（全面融合生成、体型缩放与回收）：
+ * <p>业务规则：
  * <ul>
- *   <li><b>普通右键地面</b>：放置 100% 标准基准人偶；</li>
- *   <li><b>普通右键人偶</b>：无级/档位轮转缩放人偶体型（25% ~ 1000% 巨物场景）；</li>
- *   <li><b>Shift + 右键人偶</b>：精准回收指定人偶，并联动抹除其运动轨迹；</li>
- *   <li><b>Shift + 右键方块/空气</b>：以目标为中心 16 格范围批量清场，并彻底清理所有被移除人偶的轨迹。</li>
+ *   <li><b>普通右键地面</b>：放置水平平躺圆柱替身人偶；</li>
+ *   <li><b>普通右键人偶</b>：精准回收指定人偶并清除对应轨迹；</li>
+ *   <li><b>Shift + 右键方块/空气</b>：以目标为中心 16 格范围批量清场，并彻底清理轨迹。</li>
  * </ul>
  */
-public final class MannequinSpawnItem extends Item {
+public final class LyingMannequinSpawnItem extends Item {
 
-    public MannequinSpawnItem(Item.Properties properties) {
+    public LyingMannequinSpawnItem(Item.Properties properties) {
         super(properties);
     }
 
@@ -53,10 +44,10 @@ public final class MannequinSpawnItem extends Item {
             return InteractionResult.sidedSuccess(level.isClientSide());
         }
 
-        // 2. 普通右键方块：生成 100% 标准基准人偶
+        // 2. 普通右键方块：生成水平平躺圆柱替身
         BlockPos spawnPos = context.getClickedPos().relative(context.getClickedFace());
         float yaw = player != null ? player.getYRot() : 0.0F;
-        boolean ok = DirectorWandHelper.spawnMannequin(level, player, spawnPos, yaw);
+        boolean ok = DirectorWandHelper.spawnLyingMannequin(level, player, spawnPos, yaw);
         return ok ? InteractionResult.sidedSuccess(level.isClientSide()) : InteractionResult.FAIL;
     }
 
@@ -76,8 +67,8 @@ public final class MannequinSpawnItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        tooltipComponents.add(Component.literal("§6【漫剧导演工杖】一体化导演制片工具:"));
-        tooltipComponents.add(Component.literal(" §e• 右键地面: §f放置 100% 标准立式替身人偶"));
+        tooltipComponents.add(Component.literal("§6【卧式导演工杖】漫剧平躺替身专用工具:"));
+        tooltipComponents.add(Component.literal(" §e• 右键地面: §f放置水平平躺圆柱替身"));
         tooltipComponents.add(Component.literal(" §c• 右键人偶: §f单体回收人偶并清除对应轨迹"));
         tooltipComponents.add(Component.literal(" §d• 对准人偶+Shift+滚轮: §f无级缩放体型 (5%微缩 ~ 2000%巨像)"));
         tooltipComponents.add(Component.literal(" §c• Shift+右键地面/空气: §f16 格范围一键清场并清除轨迹"));
@@ -98,10 +89,6 @@ public final class MannequinSpawnItem extends Item {
     private static final class ClientActionFacade {
         private static boolean hasShiftDown() {
             return net.minecraft.client.gui.screens.Screen.hasShiftDown();
-        }
-
-        private static void cleanupRangeTracks(BlockPos pos, double radius) {
-            com.mannequin.client.timeline.ClientTrackCleanupHelper.cleanupRangeTracks(pos, radius);
         }
     }
 }
