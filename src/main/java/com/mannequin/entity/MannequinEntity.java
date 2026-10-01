@@ -203,9 +203,8 @@ public class MannequinEntity extends Entity {
     public InteractionResult interact(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        // 0. 手持漫剧导演工杖 (MANNEQUIN_SPAWN 或 MANNEQUIN_REMOVER)
-        boolean isDirectorWand = stack.is(com.mannequin.registry.ModItems.MANNEQUIN_SPAWN.get())
-                || stack.is(com.mannequin.registry.ModItems.MANNEQUIN_REMOVER.get());
+        // 0. 手持漫剧导演工杖 (MANNEQUIN_SPAWN)
+        boolean isDirectorWand = stack.is(com.mannequin.registry.ModItems.MANNEQUIN_SPAWN.get());
 
         if (isDirectorWand) {
             com.mannequin.item.DirectorWandHelper.recycleMannequin(this, player);

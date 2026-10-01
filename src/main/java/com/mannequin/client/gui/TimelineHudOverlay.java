@@ -281,7 +281,7 @@ public final class TimelineHudOverlay implements LayeredDraw.Layer {
         g.drawString(mc.font, "§c[F7隐藏]", startX + cardWidth - 42, textY, 0xFFFF7777, false);
         textY += 13;
 
-        g.drawString(mc.font, "§e① 布景: §7手持染料染色, §b回收杖§7删除人偶", textX, textY, 0xFFFFFFFF, false);
+        g.drawString(mc.font, "§e① 布景: §7手持染料染色, §b导演工杖§7右键删除人偶", textX, textY, 0xFFFFFFFF, false);
         textY += lineH;
         g.drawString(mc.font, "§e② 附身: §7准星对人偶按 §b[G]§7 键走位", textX, textY, 0xFFFFFFFF, false);
         textY += lineH;
@@ -344,7 +344,7 @@ public final class TimelineHudOverlay implements LayeredDraw.Layer {
             tipText = "▶ 全场多轨正在同步回放中！按 [P] 暂停，按 [R] 倒带复位至第 0 秒";
             color = 0xFF55FF55;
         } else {
-            tipText = "💡 新手提示：随时按 [C] 呼出导演快捷菜单，按 [F6] 上帝视角，手持回收杖右键可删除人偶 §8| §7[F7关闭提示]";
+            tipText = "💡 新手提示：随时按 [C] 呼出导演快捷菜单，按 [F6] 上帝视角，手持导演工杖右键人偶可删除 §8| §7[F7关闭提示]";
             color = 0xFFDDDDDD;
         }
 
