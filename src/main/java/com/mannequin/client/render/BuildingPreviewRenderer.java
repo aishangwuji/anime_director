@@ -23,10 +23,31 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.renderer.RenderStateShard;
+import java.util.OptionalDouble;
+
 /**
  * 客户端建筑选区线框与放置全息预览渲染器（Building Preview Renderer）。
  */
 public final class BuildingPreviewRenderer {
+
+    private static final RenderType SELECTION_LINE_TYPE = RenderType.create(
+            "mannequin_selection_lines",
+            DefaultVertexFormat.POSITION_COLOR_NORMAL,
+            VertexFormat.Mode.LINES,
+            1536,
+            RenderType.CompositeState.builder()
+                    .setShaderState(RenderStateShard.RENDERTYPE_LINES_SHADER)
+                    .setLineState(new RenderStateShard.LineStateShard(OptionalDouble.of(3.0)))
+                    .setLayeringState(RenderStateShard.VIEW_OFFSET_Z_LAYERING)
+                    .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+                    .setOutputState(RenderStateShard.ITEM_ENTITY_TARGET)
+                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                    .setCullState(RenderStateShard.NO_CULL)
+                    .createCompositeState(false)
+    );
 
     private BuildingPreviewRenderer() {
     }
@@ -163,7 +184,7 @@ public final class BuildingPreviewRenderer {
         Vec3 camPos = camera.getPosition();
         PoseStack poseStack = event.getPoseStack();
         MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
-        VertexConsumer lineConsumer = bufferSource.getBuffer(RenderType.lines());
+        VertexConsumer lineConsumer = bufferSource.getBuffer(SELECTION_LINE_TYPE);
 
         BuildingSelectionManager bsm = BuildingSelectionManager.INSTANCE;
 
@@ -215,5 +236,6 @@ public final class BuildingPreviewRenderer {
         }
 
         poseStack.popPose();
+        bufferSource.endBatch(SELECTION_LINE_TYPE);
     }
 }

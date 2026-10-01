@@ -96,13 +96,9 @@ public class MannequinEntity extends Entity {
     }
 
     public void setScale(float scale) {
-        float clamped = Math.max(0.1F, Math.min(20.0F, scale));
+        float clamped = Math.max(0.05F, Math.min(20.0F, scale));
         entityData.set(DATA_SCALE, clamped);
-        double oldX = getX();
-        double oldY = getY();
-        double oldZ = getZ();
         this.refreshDimensions();
-        this.setPos(oldX, oldY, oldZ);
     }
 
     /**
@@ -133,7 +129,9 @@ public class MannequinEntity extends Entity {
         if (scale <= 2.05F) return "200% 小型机甲/魔像";
         if (scale <= 3.05F) return "300% 泰坦/巨型领主";
         if (scale <= 5.05F) return "500% 上古巨兽/大机甲";
-        return "1000% 摩天巨像/哥斯拉级巨物";
+        if (scale <= 8.05F) return "800% 摩天巨像";
+        if (scale <= 10.05F) return "1000% 摩天巨像/哥斯拉级巨物";
+        return String.format("%d%% 终极超维巨像", Math.round(scale * 100.0F));
     }
 
     @Override
@@ -148,7 +146,7 @@ public class MannequinEntity extends Entity {
             height = 1.1F;
         }
         return net.minecraft.world.entity.EntityDimensions.scalable(width, height)
-                .withEyeHeight(height * 0.85F)
+                .withEyeHeight(height * (1.65F / 1.8F))
                 .scale(getScale());
     }
 
@@ -203,21 +201,20 @@ public class MannequinEntity extends Entity {
     public InteractionResult interact(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        // 0. 手持漫剧导演工杖 (MANNEQUIN_SPAWN)
-        boolean isDirectorWand = stack.is(com.mannequin.registry.ModItems.MANNEQUIN_SPAWN.get());
-
-        if (isDirectorWand) {
-            com.mannequin.item.DirectorWandHelper.recycleMannequin(this, player);
-            return InteractionResult.sidedSuccess(level().isClientSide());
-        }
-
-        // 1. 空手/其他物品 + 潜行右键：循环切换经典动作姿态预设
+        // 0. 潜行右键（无论手持工杖还是空手/其他物品）：循环切换经典动作姿态预设 (站立/坐姿/平躺/蹲伏/举手)
         if (player.isShiftKeyDown()) {
             if (!level().isClientSide()) {
-                MannequinPose nextPose = MannequinPose.byId((getMannequinPose().ordinal() + 1) % MannequinPose.values().length);
+                MannequinPose nextPose = MannequinPose.byId((getMannequinPose().ordinal() + 1) % MannequinPose.getValues().length);
                 setMannequinPose(nextPose);
                 player.displayClientMessage(net.minecraft.network.chat.Component.literal("§a[替身姿态] 已切换为: §e" + nextPose.getDisplayName()), true);
             }
+            return InteractionResult.sidedSuccess(level().isClientSide());
+        }
+
+        // 1. 手持漫剧导演工杖 (MANNEQUIN_SPAWN) 直接右键人偶：精准回收删除该人偶并清除对应轨迹
+        boolean isDirectorWand = stack.is(com.mannequin.registry.ModItems.MANNEQUIN_SPAWN.get());
+        if (isDirectorWand) {
+            com.mannequin.item.DirectorWandHelper.recycleMannequin(this, player);
             return InteractionResult.sidedSuccess(level().isClientSide());
         }
 

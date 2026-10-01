@@ -187,8 +187,6 @@ public final class CameraStationRenderer {
                 poseStack.popPose();
             }
 
-            bufferSource.endBatch();
-
         } catch (Throwable t) {
             LOGGER.error("Error in CameraStationRenderer.onRenderLevelStage", t);
         }

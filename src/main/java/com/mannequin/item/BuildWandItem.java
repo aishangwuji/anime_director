@@ -2,7 +2,6 @@ package com.mannequin.item;
 
 import com.mannequin.building.BuildingBlueprintHelper;
 import com.mannequin.client.building.BuildingSelectionManager;
-import com.mannequin.client.gui.BuildingLibraryScreen;
 import com.mannequin.network.PlaceBuildingPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;

@@ -269,12 +269,12 @@ public final class PuppeteerController {
      */
     public void onClientTick() {
         Minecraft mc = Minecraft.getInstance();
-        if (!isPossessing() || mc.player == null) {
+        if (possessedEntity == null || mc.player == null) {
             return;
         }
 
-        // 实体销毁保护：若被附身人偶被移除/回收/销毁，立即安全退出附身并交还相机
-        if (possessedEntity == null || possessedEntity.isRemoved()) {
+        // 实体销毁保护：若被附身人偶被移除/回收/销毁/死亡，立即安全退出附身并交还相机
+        if (!possessedEntity.isAlive() || possessedEntity.isRemoved()) {
             releasePossession();
             return;
         }
@@ -347,9 +347,6 @@ public final class PuppeteerController {
         possessedEntity.setDeltaMovement(motion);
         // 使用 Minecraft 原生碰撞位移处理，具备方块阻挡、台阶跨越与落地检测，严禁穿墙瞬移
         possessedEntity.move(MoverType.SELF, motion);
-        possessedEntity.xo = possessedEntity.getX();
-        possessedEntity.yo = possessedEntity.getY();
-        possessedEntity.zo = possessedEntity.getZ();
 
         // 向服务端同步人偶受控位移，解决联机/局域网环境下的服务端物理校验拉回（Rubberbanding）
         if (mc.getConnection() != null) {

@@ -196,7 +196,7 @@ public class MannequinModel extends EntityModel<MannequinEntity> {
                     .setNormal(lastPose, nx0, 0.0F, nz0);
         }
 
-        // 2. 顶盖圆盘（双面顺逆渲染，法线严格朝上 +Y，彻底解决背面剔除导致的透明缺失问题）
+        // 2. 顶盖圆盘（单面逆时针渲染，法线严格朝上 +Y）
         for (int i = 0; i < SEGMENTS; i++) {
             int next = (i + 1) % SEGMENTS;
             float x0 = this.radius * SIN[i];
@@ -204,7 +204,7 @@ public class MannequinModel extends EntityModel<MannequinEntity> {
             float x1 = this.radius * SIN[next];
             float z1 = this.radius * COS[next];
 
-            // 正面（从外侧/上方观察为 CCW 逆时针）：中心 -> (x1, z1) -> (x0, z0) -> 中心
+            // 从外侧/上方观察为 CCW 逆时针：中心 -> (x1, z1) -> (x0, z0) -> 中心
             buffer.addVertex(pose, 0.0F, this.height, 0.0F)
                     .setColor(color)
                     .setUv(0.5F, 0.5F)
@@ -220,35 +220,6 @@ public class MannequinModel extends EntityModel<MannequinEntity> {
                     .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
 
             buffer.addVertex(pose, x0, this.height, z0)
-                    .setColor(color)
-                    .setUv(0.5F, 0.5F)
-                    .setOverlay(packedOverlay)
-                    .setLight(packedLight)
-                    .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
-
-            buffer.addVertex(pose, 0.0F, this.height, 0.0F)
-                    .setColor(color)
-                    .setUv(0.5F, 0.5F)
-                    .setOverlay(packedOverlay)
-                    .setLight(packedLight)
-                    .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
-
-            // 反面（双重保险，防止特殊光影/视向着色器背面剔除）：中心 -> (x0, z0) -> (x1, z1) -> 中心
-            buffer.addVertex(pose, 0.0F, this.height, 0.0F)
-                    .setColor(color)
-                    .setUv(0.5F, 0.5F)
-                    .setOverlay(packedOverlay)
-                    .setLight(packedLight)
-                    .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
-
-            buffer.addVertex(pose, x0, this.height, z0)
-                    .setColor(color)
-                    .setUv(0.5F, 0.5F)
-                    .setOverlay(packedOverlay)
-                    .setLight(packedLight)
-                    .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
-
-            buffer.addVertex(pose, x1, this.height, z1)
                     .setColor(color)
                     .setUv(0.5F, 0.5F)
                     .setOverlay(packedOverlay)
@@ -263,7 +234,7 @@ public class MannequinModel extends EntityModel<MannequinEntity> {
                     .setNormal(lastPose, 0.0F, 1.0F, 0.0F);
         }
 
-        // 3. 底盖圆盘（双面顺逆渲染，法线严格朝下 -Y）
+        // 3. 底盖圆盘（单面顺时针渲染，法线严格朝下 -Y）
         for (int i = 0; i < SEGMENTS; i++) {
             int next = (i + 1) % SEGMENTS;
             float x0 = this.radius * SIN[i];
@@ -271,7 +242,7 @@ public class MannequinModel extends EntityModel<MannequinEntity> {
             float x1 = this.radius * SIN[next];
             float z1 = this.radius * COS[next];
 
-            // 外侧底面：中心 -> (x0, z0) -> (x1, z1) -> 中心
+            // 外侧底面（从下方仰视为 CCW 逆时针）：中心 -> (x0, z0) -> (x1, z1) -> 中心
             buffer.addVertex(pose, 0.0F, 0.0F, 0.0F)
                     .setColor(color)
                     .setUv(0.5F, 0.5F)
@@ -287,35 +258,6 @@ public class MannequinModel extends EntityModel<MannequinEntity> {
                     .setNormal(lastPose, 0.0F, -1.0F, 0.0F);
 
             buffer.addVertex(pose, x1, 0.0F, z1)
-                    .setColor(color)
-                    .setUv(0.5F, 0.5F)
-                    .setOverlay(packedOverlay)
-                    .setLight(packedLight)
-                    .setNormal(lastPose, 0.0F, -1.0F, 0.0F);
-
-            buffer.addVertex(pose, 0.0F, 0.0F, 0.0F)
-                    .setColor(color)
-                    .setUv(0.5F, 0.5F)
-                    .setOverlay(packedOverlay)
-                    .setLight(packedLight)
-                    .setNormal(lastPose, 0.0F, -1.0F, 0.0F);
-
-            // 内侧底面（双重保险）
-            buffer.addVertex(pose, 0.0F, 0.0F, 0.0F)
-                    .setColor(color)
-                    .setUv(0.5F, 0.5F)
-                    .setOverlay(packedOverlay)
-                    .setLight(packedLight)
-                    .setNormal(lastPose, 0.0F, -1.0F, 0.0F);
-
-            buffer.addVertex(pose, x1, 0.0F, z1)
-                    .setColor(color)
-                    .setUv(0.5F, 0.5F)
-                    .setOverlay(packedOverlay)
-                    .setLight(packedLight)
-                    .setNormal(lastPose, 0.0F, -1.0F, 0.0F);
-
-            buffer.addVertex(pose, x0, 0.0F, z0)
                     .setColor(color)
                     .setUv(0.5F, 0.5F)
                     .setOverlay(packedOverlay)

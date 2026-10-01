@@ -401,7 +401,14 @@ public final class FpvFlightController {
         double currentMaxSpeed = microMode ? (maxSpeed * 0.25) : (maxSpeed * speedMultiplier);
 
         // 将相机局部坐标系推力转换到世界坐标系
-        Vec3 forward = Vec3.directionFromRotation(pitch, yaw);
+        Vec3 forward;
+        if (flightStyle == CameraFlightStyle.STABILIZED) {
+            // 防抖平稳视角（三轴云台/轨道推车）：W/S 沿水平面航向推进，Space/Shift 垂直升降
+            forward = Vec3.directionFromRotation(0.0F, yaw).normalize();
+        } else {
+            // 穿越机航模视角（高动态 3D 空战特技）：W/S 沿机头真实俯仰视线方向推力推进（低头俯冲，抬头爬升）
+            forward = Vec3.directionFromRotation(pitch, yaw);
+        }
         Vec3 right = Vec3.directionFromRotation(0.0F, yaw + 90.0F);
         Vec3 up = new Vec3(0.0, 1.0, 0.0);
 

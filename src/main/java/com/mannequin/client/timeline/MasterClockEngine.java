@@ -154,7 +154,10 @@ public final class MasterClockEngine {
         if (state == State.PLAYING) {
             return playbackTime + (double) partialTick * customTimeScale;
         }
-        return (double) currentTick + (double) partialTick;
+        if (state == State.RECORDING) {
+            return (double) currentTick + (double) partialTick;
+        }
+        return (double) currentTick; // STOPPED: 严格定格，不带 partialTick 偏移
     }
 
     /**

@@ -86,7 +86,7 @@ public final class DirectorCameraController {
 
             // 开启导演相机，生成客户端专用隐形锚点（使用公开安全的 addFreshEntity）
             Vec3 eyePos = mc.player.getEyePosition();
-            anchor = new CameraAnchorEntity(ModEntityTypes.CAMERA_ANCHOR.get(), mc.level);
+            anchor = new CameraAnchorEntity(com.mannequin.client.registry.ClientEntityTypes.CAMERA_ANCHOR.get(), mc.level);
             anchor.setPos(eyePos.x, eyePos.y, eyePos.z);
             anchor.xo = eyePos.x;
             anchor.yo = eyePos.y;

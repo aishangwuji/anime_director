@@ -24,11 +24,16 @@ public enum MannequinPose {
         return displayName;
     }
 
+    private static final MannequinPose[] VALUES = values();
+
+    public static MannequinPose[] getValues() {
+        return VALUES;
+    }
+
     public static MannequinPose byId(int id) {
-        MannequinPose[] values = values();
-        if (id < 0 || id >= values.length) {
+        if (id < 0 || id >= VALUES.length) {
             return STANDING;
         }
-        return values[id];
+        return VALUES[id];
     }
 }

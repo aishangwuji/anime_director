@@ -13,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.neoforged.fml.loading.FMLPaths;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.stb.STBVorbis;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -302,7 +303,14 @@ public final class StudioMusicEngine {
             return;
         }
         if (loopMode == LoopMode.SHUFFLE) {
-            int nextIndex = random.nextInt(playlist.size());
+            if (playlist.size() == 1) {
+                playTrack(0);
+                return;
+            }
+            int nextIndex;
+            do {
+                nextIndex = random.nextInt(playlist.size());
+            } while (nextIndex == currentTrackIndex);
             playTrack(nextIndex);
         } else {
             int nextIndex = (currentTrackIndex + 1) % playlist.size();
@@ -315,7 +323,14 @@ public final class StudioMusicEngine {
             return;
         }
         if (loopMode == LoopMode.SHUFFLE) {
-            int prevIndex = random.nextInt(playlist.size());
+            if (playlist.size() == 1) {
+                playTrack(0);
+                return;
+            }
+            int prevIndex;
+            do {
+                prevIndex = random.nextInt(playlist.size());
+            } while (prevIndex == currentTrackIndex);
             playTrack(prevIndex);
         } else {
             int prevIndex = (currentTrackIndex - 1 + playlist.size()) % playlist.size();
@@ -492,45 +507,52 @@ public final class StudioMusicEngine {
         IntBuffer channelsBuf = BufferUtils.createIntBuffer(1);
         IntBuffer sampleRateBuf = BufferUtils.createIntBuffer(1);
 
-        ShortBuffer rawPcm = STBVorbis.stb_vorbis_decode_filename(path.toAbsolutePath().toString(), channelsBuf, sampleRateBuf);
-        if (rawPcm == null) {
-            return;
-        }
-
-        int channels = channelsBuf.get(0);
-        int sampleRate = sampleRateBuf.get(0);
-        AudioFormat format = new AudioFormat(sampleRate, 16, channels, true, false);
-
-        DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
-        try (SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info)) {
-            line.open(format, 16384);
-            line.start();
-
-            int totalSamples = rawPcm.remaining();
-            int chunkSize = 2048;
-            byte[] pcmBytes = new byte[chunkSize * 2];
-
-            while (!shouldStop && rawPcm.hasRemaining()) {
-                while (isPaused && !shouldStop) {
-                    Thread.sleep(40);
-                }
-                if (shouldStop) {
-                    break;
-                }
-
-                int toRead = Math.min(chunkSize, rawPcm.remaining());
-                float currentVol = this.volume;
-                for (int i = 0; i < toRead; i++) {
-                    short sample = rawPcm.get();
-                    sample = (short) Math.max(-32768, Math.min(32767, Math.round(sample * currentVol)));
-                    pcmBytes[i * 2] = (byte) (sample & 0xFF);
-                    pcmBytes[i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
-                }
-
-                line.write(pcmBytes, 0, toRead * 2);
+        ShortBuffer rawPcm = null;
+        try {
+            rawPcm = STBVorbis.stb_vorbis_decode_filename(path.toAbsolutePath().toString(), channelsBuf, sampleRateBuf);
+            if (rawPcm == null) {
+                return;
             }
 
-            line.drain();
+            int channels = channelsBuf.get(0);
+            int sampleRate = sampleRateBuf.get(0);
+            AudioFormat format = new AudioFormat(sampleRate, 16, channels, true, false);
+
+            DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
+            try (SourceDataLine line = (SourceDataLine) AudioSystem.getLine(info)) {
+                line.open(format, 16384);
+                line.start();
+
+                int totalSamples = rawPcm.remaining();
+                int chunkSize = 2048;
+                byte[] pcmBytes = new byte[chunkSize * 2];
+
+                while (!shouldStop && rawPcm.hasRemaining()) {
+                    while (isPaused && !shouldStop) {
+                        Thread.sleep(40);
+                    }
+                    if (shouldStop) {
+                        break;
+                    }
+
+                    int toRead = Math.min(chunkSize, rawPcm.remaining());
+                    float currentVol = this.volume;
+                    for (int i = 0; i < toRead; i++) {
+                        short sample = rawPcm.get();
+                        sample = (short) Math.max(-32768, Math.min(32767, Math.round(sample * currentVol)));
+                        pcmBytes[i * 2] = (byte) (sample & 0xFF);
+                        pcmBytes[i * 2 + 1] = (byte) ((sample >> 8) & 0xFF);
+                    }
+
+                    line.write(pcmBytes, 0, toRead * 2);
+                }
+
+                line.drain();
+            }
+        } finally {
+            if (rawPcm != null) {
+                MemoryUtil.memFree(rawPcm);
+            }
         }
     }
 

@@ -72,6 +72,7 @@ public final class Mp4VideoRecorder {
     private WritableByteChannel stdinChannel = null;
     private File currentOutputFile = null;
     private volatile boolean recording = false;
+    private volatile boolean workerRunning = false;
     private int frameCount = 0;
 
     private Thread stderrDrainerThread = null;
@@ -230,14 +231,17 @@ public final class Mp4VideoRecorder {
             this.stderrDrainerThread.start();
 
             this.recording = true;
+            this.workerRunning = true;
 
             // 2. 核心异步传输守护线程（全权接管所有 I/O 写入与 NativeImage 内存释放，解脱游戏渲染主线程）
             this.workerThread = new Thread(() -> {
-                while (recording || !frameQueue.isEmpty()) {
+                while (workerRunning || !frameQueue.isEmpty()) {
                     NativeImage frame = null;
                     try {
                         frame = frameQueue.poll(50, TimeUnit.MILLISECONDS);
                     } catch (InterruptedException ignored) {
+                        Thread.currentThread().interrupt();
+                        break;
                     }
 
                     if (frame == null) {
@@ -249,7 +253,7 @@ public final class Mp4VideoRecorder {
                             long ptr = PIXELS_FIELD.getLong(frame);
                             long bytesCount = (long) frame.getWidth() * frame.getHeight() * 4L;
                             ByteBuffer buf = MemoryUtil.memByteBuffer(ptr, (int) bytesCount);
-                            while (buf.hasRemaining() && stdinChannel.isOpen()) {
+                            while (buf.hasRemaining()) {
                                 stdinChannel.write(buf);
                             }
                         } else if (ffmpegStdin != null) {
@@ -258,6 +262,9 @@ public final class Mp4VideoRecorder {
                             ffmpegStdin.flush();
                         }
                         frameCount++;
+                    } catch (IOException e) {
+                        LOGGER.debug("[MP4 Video Recorder] Writer stopped: {}", e.getMessage());
+                        break;
                     } catch (Exception e) {
                         LOGGER.error("[MP4 Video Recorder] 写入管道发生异常: {}", e.getMessage());
                         break;
@@ -265,6 +272,7 @@ public final class Mp4VideoRecorder {
                         frame.close(); // 在后台线程及时释放原生 C 堆外内存，杜绝任何显存泄漏
                     }
                 }
+                workerRunning = false;
             }, "FFmpeg-Frame-Writer");
             this.workerThread.setDaemon(true);
             this.workerThread.start();
@@ -299,7 +307,7 @@ public final class Mp4VideoRecorder {
             if (!lastStderrLines.isEmpty()) {
                 LOGGER.error("[MP4 Video Recorder] FFmpeg 详细报错日志:\n{}", String.join("\n", lastStderrLines));
             }
-            stop();
+            recording = false;
             image.close();
             return;
         }
@@ -318,19 +326,11 @@ public final class Mp4VideoRecorder {
      * @return 最终生成的 MP4 文件，若失败则为 null
      */
     public synchronized File stop() {
-        if (!recording) {
+        if (!recording && !workerRunning) {
             return currentOutputFile;
         }
         recording = false;
-
-        // 等待后台队列中剩余帧清空写入（最多等待 3 秒）
-        if (workerThread != null) {
-            try {
-                workerThread.join(3000);
-            } catch (InterruptedException ignored) {
-            }
-            workerThread = null;
-        }
+        workerRunning = false;
 
         // 清理残余未写入的帧
         NativeImage leftover;
@@ -338,7 +338,24 @@ public final class Mp4VideoRecorder {
             leftover.close();
         }
 
-        // 关闭管道流，触发 FFmpeg 封装写尾
+        // 等 worker 自然退出
+        if (workerThread != null) {
+            try {
+                workerThread.join(3000);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+            if (workerThread.isAlive()) {
+                LOGGER.warn("[MP4 Video Recorder] Writer 线程 3s 未退出，强制中断");
+                workerThread.interrupt();
+                if (ffmpegProcess != null) {
+                    ffmpegProcess.destroyForcibly();
+                }
+            }
+            workerThread = null;
+        }
+
+        // 现在 worker 已终止，安全关闭管道流
         try {
             if (stdinChannel != null) {
                 stdinChannel.close();
@@ -348,8 +365,13 @@ public final class Mp4VideoRecorder {
                 ffmpegStdin.close();
                 ffmpegStdin = null;
             }
-            if (ffmpegProcess != null) {
-                boolean exited = ffmpegProcess.waitFor(10, TimeUnit.SECONDS);
+        } catch (IOException e) {
+            LOGGER.warn("[MP4 Video Recorder] 关流异常: {}", e.getMessage());
+        }
+
+        if (ffmpegProcess != null) {
+            try {
+                boolean exited = ffmpegProcess.waitFor(5, TimeUnit.SECONDS);
                 if (!exited) {
                     LOGGER.warn("[MP4 Video Recorder] FFmpeg 超时未退出，强制终止...");
                     ffmpegProcess.destroyForcibly();
@@ -362,10 +384,10 @@ public final class Mp4VideoRecorder {
                         }
                     }
                 }
-                ffmpegProcess = null;
+            } catch (Exception e) {
+                LOGGER.error("[MP4 Video Recorder] Error stopping FFmpeg process", e);
             }
-        } catch (Exception e) {
-            LOGGER.error("[MP4 Video Recorder] Error stopping FFmpeg process", e);
+            ffmpegProcess = null;
         }
 
         File result = currentOutputFile;

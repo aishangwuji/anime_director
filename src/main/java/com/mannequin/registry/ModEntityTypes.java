@@ -26,23 +26,8 @@ public final class ModEntityTypes {
                     .<MannequinEntity>of(MannequinEntity::new, MobCategory.MISC)
                     .sized(0.6F, 1.8F)
                     .eyeHeight(1.65F)
-                    .clientTrackingRange(10)
+                    .clientTrackingRange(16)
                     .build("mannequin"));
-
-    /**
-     * 导演自由相机与穿越机专用的客户端虚拟视口锚点实体类型。
-     *
-     * <p>仅限客户端运镜控制器挂载摄像机视口使用，严禁在服务端召唤或存储。
-     */
-    public static final DeferredHolder<EntityType<?>, EntityType<com.mannequin.client.camera.CameraAnchorEntity>> CAMERA_ANCHOR =
-            ENTITY_TYPES.register("camera_anchor", () -> EntityType.Builder
-                    .<com.mannequin.client.camera.CameraAnchorEntity>of(com.mannequin.client.camera.CameraAnchorEntity::new, MobCategory.MISC)
-                    .sized(0.0F, 0.0F)
-                    .eyeHeight(0.0F)
-                    .noSave()
-                    .noSummon()
-                    .fireImmune()
-                    .build("camera_anchor"));
 
     private ModEntityTypes() {
     }

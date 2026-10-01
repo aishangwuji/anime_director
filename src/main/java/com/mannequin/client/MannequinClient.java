@@ -34,6 +34,9 @@ public final class MannequinClient {
      * @param modEventBus NeoForge 模组生命周期事件总线 (MOD Bus)
      */
     public static void init(IEventBus modEventBus) {
+        // 0. 注册客户端专属实体类型 (MOD Bus)
+        com.mannequin.client.registry.ClientEntityTypes.register(modEventBus);
+
         // 1. 注册模组级声明事件 (MOD Bus)
         modEventBus.addListener(MannequinClient::onRegisterLayerDefinitions);
         modEventBus.addListener(MannequinClient::onRegisterRenderers);
@@ -100,6 +103,7 @@ public final class MannequinClient {
             DirectorCameraController.INSTANCE.clearDollyKeyframes();
             com.mannequin.client.building.BuildingSelectionManager.INSTANCE.clearSelection();
             com.mannequin.client.building.BuildingSelectionManager.INSTANCE.clearPlacement();
+            com.mannequin.client.audio.StudioMusicEngine.INSTANCE.stop();
         });
     }
 
@@ -117,7 +121,7 @@ public final class MannequinClient {
         // 纯色人偶实体渲染器
         event.registerEntityRenderer(ModEntityTypes.MANNEQUIN.get(), MannequinRenderer::new);
         // 相机锚点实体渲染器（隐形跳过渲染）
-        event.registerEntityRenderer(ModEntityTypes.CAMERA_ANCHOR.get(), NoopRenderer::new);
+        event.registerEntityRenderer(com.mannequin.client.registry.ClientEntityTypes.CAMERA_ANCHOR.get(), NoopRenderer::new);
     }
 
     /**

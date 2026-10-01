@@ -96,12 +96,11 @@ public final class MultiCameraBatchRunner {
     }
 
     public int getRecordingFps() {
-        return (recordingFps > 0) ? recordingFps : 20;
+        return 20; // 严格与客户端逻辑 tick (20 TPS) 保持 1:1 物理同步，彻底杜绝视频变速快放
     }
 
     public void setRecordingFps(int fps) {
-        this.recordingFps = Math.max(10, Math.min(120, fps));
-        savePreferences();
+        this.recordingFps = 20;
     }
 
     public boolean isLivePov() {

@@ -72,15 +72,18 @@ public final class MannequinSpawnItem extends Item {
         return super.use(level, player, hand);
     }
 
+    private static final boolean IS_CLIENT = FMLEnvironment.dist.isClient();
+
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        tooltipComponents.add(Component.literal("§6【漫剧导演工杖】三合一创作工具:"));
+        tooltipComponents.add(Component.literal("§6【漫剧导演工杖】一体化导演制片工具:"));
         tooltipComponents.add(Component.literal(" §e• 右键地面: §f放置 100% 标准基准人偶"));
-        tooltipComponents.add(Component.literal(" §e• 右键人偶: §f循环缩放体型 (25%微缩 ~ 1000%摩天巨物)"));
-        tooltipComponents.add(Component.literal(" §c• Shift+右键人偶: §f单体精准回收人偶并清除轨迹"));
+        tooltipComponents.add(Component.literal(" §c• 右键人偶: §f单体回收人偶并清除对应轨迹"));
+        tooltipComponents.add(Component.literal(" §a• Shift+右键人偶: §f循环切换姿态 (站立/平躺/下蹲)"));
+        tooltipComponents.add(Component.literal(" §d• 对准人偶+Shift+滚轮: §f无级缩放体型 (5%微缩 ~ 2000%巨像)"));
         tooltipComponents.add(Component.literal(" §c• Shift+右键地面/空气: §f16 格范围一键清场并清除轨迹"));
 
-        if (FMLEnvironment.dist.isClient() && ClientActionFacade.hasShiftDown()) {
+        if (IS_CLIENT && ClientActionFacade.hasShiftDown()) {
             tooltipComponents.add(Component.empty());
             tooltipComponents.add(Component.literal("§6【导演制片 3 步工作流】:").withStyle(ChatFormatting.BOLD));
             tooltipComponents.add(Component.literal(" §e① 角色染色: §f手持原版染料右键人偶（纯红=主角A，纯蓝=主角B）"));

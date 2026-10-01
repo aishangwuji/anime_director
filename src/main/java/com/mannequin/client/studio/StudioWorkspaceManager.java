@@ -174,7 +174,7 @@ public final class StudioWorkspaceManager {
             mc.options.hideGui = cinematicHideGui;
 
             // 4. 应用电影宽银幕画幅遮罩（默认 21:9 或用户上次记忆的比例）
-            hud.setAspectRatioMode(cinematicAspectRatio);
+            hud.setAspectRatioModeInternal(cinematicAspectRatio);
 
             // 5. 导演本体隐身（杜绝穿帮）
             cam.setHidePlayerModel(cinematicHidePlayer);
@@ -205,7 +205,7 @@ public final class StudioWorkspaceManager {
             mc.options.hideGui = buildHideGui;
 
             // 4. 恢复原生全屏视野（无黑边遮罩，方便方块搭建）
-            hud.setAspectRatioMode(buildAspectRatio);
+            hud.setAspectRatioModeInternal(buildAspectRatio);
 
             // 5. 显现导演本体模型
             cam.setHidePlayerModel(buildHidePlayer);

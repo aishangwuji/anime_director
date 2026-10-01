@@ -58,7 +58,7 @@ public final class CameraInputHandler {
                 return;
             }
 
-            if (key == GLFW.GLFW_KEY_BACKSPACE) {
+            if (key == GLFW.GLFW_KEY_BACKSPACE || key == GLFW.GLFW_KEY_DELETE) {
                 if (bsm.isPlacing()) {
                     bsm.clearPlacement();
                     if (mc.player != null) {
@@ -223,9 +223,14 @@ public final class CameraInputHandler {
                     mc.player.displayClientMessage(Component.literal("§e[导演系统] 已清空当前附身实体的动捕数据"), true);
                 }
             } else {
-                DollyPlaybackDriver.INSTANCE.clearDollyKeyframes();
-                MasterClockEngine.INSTANCE.clearAllTracks();
-                mc.player.displayClientMessage(Component.literal("§e[导演系统] 已清空全场所有动捕轨道与机械滑轨样条机位"), true);
+                // 误触保护：非附身状态下清空全场所有轨道与滑轨，必须按住 Shift (即 Shift + Delete)
+                if (mc.options.keyShift.isDown() || net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+                    DollyPlaybackDriver.INSTANCE.clearDollyKeyframes();
+                    MasterClockEngine.INSTANCE.clearAllTracks();
+                    mc.player.displayClientMessage(Component.literal("§e[导演系统] 已清空全场所有动捕轨道与机械滑轨样条机位"), true);
+                } else {
+                    mc.player.displayClientMessage(Component.literal("§c[安全保护] 防止误触：若要彻底清空全场所有动捕与滑轨，请按 §b[Shift + Delete]§c！"), true);
+                }
             }
         }
 

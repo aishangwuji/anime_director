@@ -67,8 +67,12 @@ public final class TimelineHudOverlay implements LayeredDraw.Layer {
         return aspectRatioMode;
     }
 
-    public void setAspectRatioMode(AspectRatioMode mode) {
+    public void setAspectRatioModeInternal(AspectRatioMode mode) {
         this.aspectRatioMode = mode;
+    }
+
+    public void setAspectRatioMode(AspectRatioMode mode) {
+        setAspectRatioModeInternal(mode);
         com.mannequin.client.studio.StudioWorkspaceManager.INSTANCE.onAspectRatioChanged(mode);
     }
 
