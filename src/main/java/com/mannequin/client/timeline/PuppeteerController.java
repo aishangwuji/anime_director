@@ -65,7 +65,7 @@ public final class PuppeteerController {
             return false;
         }
 
-        // 探测准星前方 10 格内的实体
+        // 优先探测准星前方实体（近距离）
         HitResult hit = mc.hitResult;
         if (hit instanceof EntityHitResult entityHit) {
             Entity target = entityHit.getEntity();
@@ -73,6 +73,13 @@ public final class PuppeteerController {
                 possess(target);
                 return true;
             }
+        }
+
+        // 准星远距离精确投射（支持最远 10 格吸附附身人偶）
+        Entity targetMannequin = com.mannequin.client.camera.MannequinScaleScrollHandler.INSTANCE.findTargetMannequin(mc, 10.0D);
+        if (targetMannequin != null && targetMannequin != mc.player) {
+            possess(targetMannequin);
+            return true;
         }
         return false;
     }
