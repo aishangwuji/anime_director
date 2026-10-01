@@ -225,11 +225,19 @@ public final class BuildingPreviewRenderer {
             LevelRenderer.renderLineBox(poseStack, lineConsumer, bBox, 1.0F, 0.8F, 0.0F, 0.7F);
         }
 
-        // 2. 渲染放置模式下的地面全息对齐框 (亮绿)
+        // 2. 渲染放置模式下的全息对齐框 (亮绿，支持吸附方块或视线投射，并响应高度偏移)
         if (bsm.isPlacing()) {
             HitResult hit = mc.hitResult;
+            BlockPos targetOrigin = null;
             if (hit instanceof BlockHitResult bhr && hit.getType() == HitResult.Type.BLOCK) {
-                BlockPos targetOrigin = bhr.getBlockPos().relative(bhr.getDirection());
+                targetOrigin = bhr.getBlockPos().relative(bhr.getDirection()).above(bsm.getPlacementOffsetY());
+            } else if (mc.player != null) {
+                Vec3 look = mc.player.getLookAngle();
+                Vec3 targetEye = mc.player.getEyePosition().add(look.scale(10.0D));
+                targetOrigin = BlockPos.containing(targetEye).above(bsm.getPlacementOffsetY());
+            }
+
+            if (targetOrigin != null) {
                 Vec3i size = bsm.getRotatedPlacementSize();
 
                 AABB ghostBox = new AABB(

@@ -71,6 +71,8 @@ public final class BuildingSelectionManager {
 
     // ==================== 放置模式管理 ====================
 
+    private int placementOffsetY = 0; // 高度偏移（-20 到 +20 格）
+
     public boolean isPlacing() {
         return selectedBlueprint != null;
     }
@@ -82,11 +84,13 @@ public final class BuildingSelectionManager {
     public void setSelectedBlueprint(BuildingBlueprintHelper.BlueprintInfo selectedBlueprint) {
         this.selectedBlueprint = selectedBlueprint;
         this.placementRotation = 0;
+        this.placementOffsetY = 0;
     }
 
     public void clearPlacement() {
         this.selectedBlueprint = null;
         this.placementRotation = 0;
+        this.placementOffsetY = 0;
     }
 
     public int getPlacementRotation() {
@@ -94,7 +98,24 @@ public final class BuildingSelectionManager {
     }
 
     public void rotatePlacement() {
-        this.placementRotation = (this.placementRotation + 90) % 360;
+        rotatePlacement(true);
+    }
+
+    public void rotatePlacement(boolean clockwise) {
+        int delta = clockwise ? 90 : -90;
+        this.placementRotation = (this.placementRotation + delta + 360) % 360;
+    }
+
+    public int getPlacementOffsetY() {
+        return placementOffsetY;
+    }
+
+    public void setPlacementOffsetY(int offset) {
+        this.placementOffsetY = Math.max(-20, Math.min(20, offset));
+    }
+
+    public void adjustPlacementOffsetY(int delta) {
+        setPlacementOffsetY(this.placementOffsetY + delta);
     }
 
     /**

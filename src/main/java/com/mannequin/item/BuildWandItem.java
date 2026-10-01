@@ -148,30 +148,47 @@ public class BuildWandItem extends Item {
         if (level.isClientSide()) {
             BuildingSelectionManager bsm = BuildingSelectionManager.INSTANCE;
 
-            // 1. 潜行右键方块：若在放置模式则退出放置模式；否则清空当前选区
+            // 1. 潜行右键方块：若在放置模式则退出放置模式；选区模式下将自身位置设为角点 B
             if (player.isShiftKeyDown()) {
                 if (bsm.isPlacing()) {
                     bsm.clearPlacement();
                     player.displayClientMessage(Component.literal("§e[建筑蓝图仪] 已退出放置模式"), true);
-                } else if (bsm.hasSelection()) {
-                    bsm.clearSelection();
-                    player.displayClientMessage(Component.literal("§e[建筑蓝图仪] 已清空当前框选区域"), true);
+                    level.playSound(player, clickedPos, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.PLAYERS, 0.6F, 0.8F);
+                    return InteractionResult.SUCCESS;
+                } else {
+                    BlockPos myPos = player.blockPosition();
+                    bsm.setPosB(myPos);
+                    level.playSound(player, myPos, SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.PLAYERS, 0.8F, 1.6F);
+                    if (bsm.getPosA() != null) {
+                        Vec3i size = bsm.getSelectionSize();
+                        long volume = (long) size.getX() * size.getY() * size.getZ();
+                        player.displayClientMessage(
+                                Component.literal(String.format("§a[建筑蓝图仪] 已将你所在位置锁定为角点 B！选区尺寸: §e%d × %d × %d §7(共 %,d 方块) | 空中右键呼出蓝图库",
+                                        size.getX(), size.getY(), size.getZ(), volume)),
+                                true
+                        );
+                    } else {
+                        player.displayClientMessage(
+                                Component.literal(String.format("§e[建筑蓝图仪] 已将你所在位置锁定为角点 B: (%d, %d, %d)",
+                                        myPos.getX(), myPos.getY(), myPos.getZ())),
+                                true
+                        );
+                    }
+                    return InteractionResult.SUCCESS;
                 }
-                level.playSound(player, clickedPos, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.PLAYERS, 0.6F, 0.8F);
-                return InteractionResult.SUCCESS;
             }
 
-            // 2. 放置模式：一键在点击方块上方生成落地建筑
+            // 2. 放置模式：一键在点击方块上方生成落地建筑（附带高度微调）
             if (bsm.isPlacing()) {
                 BuildingBlueprintHelper.BlueprintInfo bp = bsm.getSelectedBlueprint();
-                BlockPos targetOrigin = clickedPos.relative(context.getClickedFace());
+                BlockPos targetOrigin = clickedPos.relative(context.getClickedFace()).above(bsm.getPlacementOffsetY());
                 int rot = bsm.getPlacementRotation();
 
                 // 发送网络包至服务端一键放置
                 PacketDistributor.sendToServer(new PlaceBuildingPayload(targetOrigin, bp.fileName(), rot));
 
                 level.playSound(player, targetOrigin, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1.0F, 1.2F);
-                player.displayClientMessage(Component.literal(String.format("§a[建筑蓝图仪] 正在部署建筑「%s」 (旋转: %d°)...", bp.name(), rot)), true);
+                player.displayClientMessage(Component.literal(String.format("§a[建筑蓝图仪] 正在部署建筑「%s」 (旋转: %d°, 高度: %+d)...", bp.name(), rot, bsm.getPlacementOffsetY())), true);
                 return InteractionResult.SUCCESS;
             }
 

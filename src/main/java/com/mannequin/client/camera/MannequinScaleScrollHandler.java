@@ -4,6 +4,7 @@ import com.mannequin.entity.MannequinEntity;
 import com.mannequin.network.SyncMannequinScalePayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -28,6 +29,35 @@ public final class MannequinScaleScrollHandler {
 
         double deltaY = event.getScrollDeltaY();
         if (deltaY == 0) {
+            return;
+        }
+
+        // 0. 建筑蓝图全息放置模式：滚轮旋转 90°，Shift + 滚轮微调高度偏移
+        ItemStack mainHand = mc.player.getMainHandItem();
+        ItemStack offHand = mc.player.getOffhandItem();
+        boolean holdingBuildWand = mainHand.is(com.mannequin.registry.ModItems.BUILD_WAND.get()) || offHand.is(com.mannequin.registry.ModItems.BUILD_WAND.get());
+        com.mannequin.client.building.BuildingSelectionManager bsm = com.mannequin.client.building.BuildingSelectionManager.INSTANCE;
+
+        if (holdingBuildWand && bsm.isPlacing()) {
+            boolean isShift = mc.options.keyShift.isDown() || net.minecraft.client.gui.screens.Screen.hasShiftDown();
+            if (isShift) {
+                int offsetDelta = deltaY > 0 ? 1 : -1;
+                bsm.adjustPlacementOffsetY(offsetDelta);
+                int currentOffset = bsm.getPlacementOffsetY();
+                String sign = currentOffset > 0 ? "+" : "";
+                mc.player.displayClientMessage(
+                        Component.literal(String.format("§a[全息建筑] 高度偏移: §e%s%d格", sign, currentOffset)),
+                        true
+                );
+            } else {
+                bsm.rotatePlacement(deltaY > 0);
+                mc.player.displayClientMessage(
+                        Component.literal(String.format("§a[全息建筑] 旋转朝向: §e%d°", bsm.getPlacementRotation())),
+                        true
+                );
+            }
+            mc.level.playSound(mc.player, mc.player.blockPosition(), net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK.value(), net.minecraft.sounds.SoundSource.PLAYERS, 0.6F, 1.2F);
+            event.setCanceled(true);
             return;
         }
 

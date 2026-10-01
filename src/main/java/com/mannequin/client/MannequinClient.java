@@ -55,7 +55,7 @@ public final class MannequinClient {
         gameBus.addListener(GhostPathRenderer::onRenderLevelStage);
         gameBus.addListener(com.mannequin.client.camera.CameraStationRenderer::onRenderLevelStage);
         gameBus.addListener(com.mannequin.client.render.BuildingPreviewRenderer::onRenderLevelStage);
-        gameBus.addListener(com.mannequin.client.render.BuildingPreviewRenderer::onLeftClickBlock);
+        gameBus.addListener(net.neoforged.bus.api.EventPriority.HIGHEST, true, com.mannequin.client.render.BuildingPreviewRenderer::onLeftClickBlock);
         gameBus.addListener(com.mannequin.client.render.BuildingPreviewRenderer::onLeftClickEmpty);
         gameBus.addListener(com.mannequin.client.studio.PureStudioManager.INSTANCE::onFinalizeSpawn);
         gameBus.addListener(com.mannequin.client.studio.PureStudioManager.INSTANCE::onEntityJoinLevel);

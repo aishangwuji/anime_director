@@ -24,9 +24,9 @@ public final class MannequinMod {
         ModItems.register(modEventBus);
         modEventBus.addListener(this::registerPayloadHandlers);
 
-        // 双端拦截手持建筑蓝图仪破坏方块（创造模式防手抖误破）
+        // 服务端拦截手持建筑蓝图仪破坏方块（创造模式防破坏方块）
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.LeftClickBlock event) -> {
-            if (event.getEntity() != null && event.getEntity().getMainHandItem().is(ModItems.BUILD_WAND.get())) {
+            if (!event.getLevel().isClientSide() && event.getEntity() != null && event.getEntity().getMainHandItem().is(ModItems.BUILD_WAND.get())) {
                 event.setCanceled(true);
             }
         });
