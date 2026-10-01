@@ -56,22 +56,40 @@ public final class MannequinClient {
         gameBus.addListener(com.mannequin.client.camera.CameraStationRenderer::onRenderLevelStage);
         gameBus.addListener(com.mannequin.client.render.BuildingPreviewRenderer::onRenderLevelStage);
         gameBus.addListener(com.mannequin.client.render.BuildingPreviewRenderer::onLeftClickBlock);
+        gameBus.addListener(com.mannequin.client.render.BuildingPreviewRenderer::onLeftClickEmpty);
         gameBus.addListener(com.mannequin.client.studio.PureStudioManager.INSTANCE::onFinalizeSpawn);
         gameBus.addListener(com.mannequin.client.studio.PureStudioManager.INSTANCE::onEntityJoinLevel);
 
-        // 3. 进入世界时自动加载并恢复本存档对应的专属片场工程数据，并激活纯净片场防怪力场
-        gameBus.addListener((ClientPlayerNetworkEvent.LoggingIn event) -> {
-            PuppeteerController.INSTANCE.releasePossession();
-            DirectorCameraController.INSTANCE.onLogout();
-            com.mannequin.client.camera.MultiCameraBatchRunner.INSTANCE.cancel();
-            com.mannequin.client.persistence.StudioPersistenceManager.INSTANCE.loadStudioScene();
-            TimelineHudOverlay.INSTANCE.loadPreferences();
-            if (com.mannequin.client.studio.PureStudioManager.INSTANCE.isSlimeShieldEnabled()) {
-                com.mannequin.client.studio.PureStudioManager.INSTANCE.purgeAllSlimes();
+        // 3. 玩家实体切实进入客户端世界时，彻底清理旧地图残余并加载本存档专属片场数据
+        gameBus.addListener((net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event) -> {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            if (mc != null && event.getEntity() == mc.player && event.getLevel().isClientSide()) {
+                // 彻底清空上一地图的建筑蓝图选区与全息框
+                com.mannequin.client.building.BuildingSelectionManager.INSTANCE.clearSelection();
+                com.mannequin.client.building.BuildingSelectionManager.INSTANCE.clearPlacement();
+
+                // 释放附身并初始化当前存档专属片场数据
+                PuppeteerController.INSTANCE.releasePossession();
+                DirectorCameraController.INSTANCE.onLogout();
+                com.mannequin.client.camera.MultiCameraBatchRunner.INSTANCE.cancel();
+                com.mannequin.client.persistence.StudioPersistenceManager.INSTANCE.loadStudioScene();
+                TimelineHudOverlay.INSTANCE.loadPreferences();
+
+                if (com.mannequin.client.studio.PureStudioManager.INSTANCE.isSlimeShieldEnabled()) {
+                    com.mannequin.client.studio.PureStudioManager.INSTANCE.purgeAllSlimes();
+                }
             }
         });
 
-        // 4. 离开世界或断开连接时，先同步落盘持久化本存档片场工程，再释放资源
+        // 4. 世界关卡卸载时（切维度/换图），清空临时选区与全息框，防止跨世界残影
+        gameBus.addListener((net.neoforged.neoforge.event.level.LevelEvent.Unload event) -> {
+            if (event.getLevel().isClientSide()) {
+                com.mannequin.client.building.BuildingSelectionManager.INSTANCE.clearSelection();
+                com.mannequin.client.building.BuildingSelectionManager.INSTANCE.clearPlacement();
+            }
+        });
+
+        // 5. 离开世界或断开连接时，先同步落盘持久化本存档片场工程，再彻底释放资源
         gameBus.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> {
             com.mannequin.client.persistence.StudioPersistenceManager.INSTANCE.saveStudioScene(false);
             PuppeteerController.INSTANCE.releasePossession();
@@ -80,6 +98,8 @@ public final class MannequinClient {
             MasterClockEngine.INSTANCE.clearAllTracks();
             com.mannequin.client.camera.MultiCameraManager.INSTANCE.clearStations();
             DirectorCameraController.INSTANCE.clearDollyKeyframes();
+            com.mannequin.client.building.BuildingSelectionManager.INSTANCE.clearSelection();
+            com.mannequin.client.building.BuildingSelectionManager.INSTANCE.clearPlacement();
         });
     }
 

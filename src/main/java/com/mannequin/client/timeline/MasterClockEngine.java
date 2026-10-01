@@ -211,10 +211,6 @@ public final class MasterClockEngine {
             if (currentTick >= totalDurationTicks) {
                 rewindToStart();
             }
-            // 若当前内存中无轨道，自动尝试从本地磁盘恢复上一场排演数据
-            if (tracks.isEmpty()) {
-                loadFromDisk();
-            }
             state = State.PLAYING;
         }
     }
@@ -342,34 +338,11 @@ public final class MasterClockEngine {
     }
 
     /**
-     * 将全场时间轴数据持久化保存到本地磁盘。
-     * <p>在主线程同步抓取数据内存快照，并将耗时的高强度 GZIP 压缩与文件落盘卸载至异步线程池，杜绝掉帧卡顿。
+     * 将全场时间轴数据持久化保存到本地磁盘（委托至本存档专属持久化管理器）。
      */
     public void saveToDisk() {
-        CompoundTag root = new CompoundTag();
-        CompoundTag tracksTag = new CompoundTag();
-        for (TimelineTrack track : tracks.values()) {
-            tracksTag.put(track.getTrackId(), track.toNbt());
-        }
-        root.put("Tracks", tracksTag);
-        root.putInt("TotalDurationTicks", totalDurationTicks);
-        root.putDouble("CustomTimeScale", customTimeScale);
-
-        // 异步后台落盘，避免录制停止时造成主线程帧率尖峰卡顿
-        java.util.concurrent.CompletableFuture.runAsync(() -> {
-            try {
-                if (net.neoforged.fml.loading.FMLPaths.CONFIGDIR != null && net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get() != null) {
-                    java.nio.file.Path dir = net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve(com.mannequin.MannequinMod.MOD_ID);
-                    java.nio.file.Files.createDirectories(dir);
-                    net.minecraft.nbt.NbtIo.writeCompressed(root, dir.resolve("last_scene.nbt"));
-                }
-            } catch (Throwable e) {
-                sendFeedbackMessage("§c[导演系统] 场景快照异步保存失败: " + e.getMessage());
-            }
-        });
+        com.mannequin.client.persistence.StudioPersistenceManager.INSTANCE.saveStudioScene(true);
     }
-
-
 
     /**
      * 发送客户端提示消息（线程安全与空指针安全保护）。
@@ -389,32 +362,10 @@ public final class MasterClockEngine {
     }
 
     /**
-     * 从本地磁盘恢复上一次排演的完整场景数据。
+     * 从本地磁盘恢复当前存档排演的场景数据。
      */
     public void loadFromDisk() {
-        try {
-            java.nio.file.Path file = net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get().resolve("mannequin/last_scene.nbt");
-            if (!java.nio.file.Files.exists(file)) {
-                return;
-            }
-            CompoundTag root = net.minecraft.nbt.NbtIo.readCompressed(file, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
-            int loaded = root.contains("TotalDurationTicks") ? root.getInt("TotalDurationTicks") : 120;
-            this.totalDurationTicks = Math.max(40, loaded);
-            if (root.contains("CustomTimeScale")) {
-                this.customTimeScale = Math.max(0.05, Math.min(3.0, root.getDouble("CustomTimeScale")));
-            }
-            CompoundTag tracksTag = root.getCompound("Tracks");
-            tracks.clear();
-            for (String id : tracksTag.getAllKeys()) {
-                tracks.put(id, TimelineTrack.fromNbt(id, tracksTag.getCompound(id)));
-            }
-
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null && !tracks.isEmpty()) {
-                mc.player.displayClientMessage(net.minecraft.network.chat.Component.literal("§a[导演系统] 已自动恢复上一次排演场景（共 " + tracks.size() + " 条动捕轨道）"), true);
-            }
-        } catch (java.io.IOException ignored) {
-        }
+        com.mannequin.client.persistence.StudioPersistenceManager.INSTANCE.loadStudioScene();
     }
 
     /**

@@ -8,6 +8,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * 漫剧导演系统构图遮罩与时间轴 HUD 渲染层（Director Timeline Overlay）。
@@ -304,9 +305,28 @@ public final class TimelineHudOverlay implements LayeredDraw.Layer {
         String tipText;
         int color;
 
+        ItemStack mainHand = (mc.player != null) ? mc.player.getMainHandItem() : ItemStack.EMPTY;
+        ItemStack offHand = (mc.player != null) ? mc.player.getOffhandItem() : ItemStack.EMPTY;
+        boolean holdingBuildWand = mainHand.is(com.mannequin.registry.ModItems.BUILD_WAND.get()) || offHand.is(com.mannequin.registry.ModItems.BUILD_WAND.get());
+        com.mannequin.client.building.BuildingSelectionManager bsm = com.mannequin.client.building.BuildingSelectionManager.INSTANCE;
+
         if (com.mannequin.client.camera.MultiCameraBatchRunner.INSTANCE.isLivePovRecording()) {
             tipText = "🔴 正在实时录制主视角运镜！WASD飞行，鼠标转动，按住[Alt]超微移，按[F10]停止录像，播完自动封包";
             color = 0xFFFF4444;
+        } else if (holdingBuildWand) {
+            if (bsm.isPlacing()) {
+                tipText = "🏛 全息放置模式：[左键/空中右键] 旋转90°，[右键地面方块] 落地部署，[Shift+右键/Del] 取消放置";
+                color = 0xFF55FF55;
+            } else if (bsm.hasSelection()) {
+                tipText = "🏛 建筑选区已就绪 (" + bsm.getSelectionSize().getX() + "×" + bsm.getSelectionSize().getY() + "×" + bsm.getSelectionSize().getZ() + ")：[空中右键] 蓝图库打包导出，[Shift+右键/Del] 清空选区";
+                color = 0xFF00E5FF;
+            } else if (bsm.getPosA() != null) {
+                tipText = "🏛 正在框选建筑：已定A点，[右键方块] 设B点，[Shift+右键] 自身位置设为B点(空中/虚空选点)，[空中右键] 视线定点";
+                color = 0xFFFFAA00;
+            } else {
+                tipText = "🏛 建筑蓝图仪：[左键] 设A点(Shift+左键空中自身)，[右键] 设B点(Shift+右键空中自身)，[空中右键] 蓝图库";
+                color = 0xFF00E5FF;
+            }
         } else if (puppeteer.isRecording()) {
             tipText = "🔴 正在动捕录制当前主体中！按 WASD 操纵走位与闪避，到达终点自动存入音轨并可按 [R] 倒带";
             color = 0xFFFF5555;

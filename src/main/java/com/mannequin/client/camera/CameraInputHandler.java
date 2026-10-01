@@ -1,5 +1,6 @@
 package com.mannequin.client.camera;
 
+import com.mannequin.client.building.BuildingSelectionManager;
 import com.mannequin.client.gui.DirectorQuickMenuScreen;
 import com.mannequin.client.gui.StudioMusicScreen;
 import com.mannequin.client.gui.TimelineHudOverlay;
@@ -9,9 +10,11 @@ import com.mannequin.client.studio.StudioWorkspaceManager;
 import com.mannequin.client.timeline.MasterClockEngine;
 import com.mannequin.client.timeline.PuppeteerController;
 import com.mannequin.client.timeline.TimelineTrack;
+import com.mannequin.registry.ModItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.event.CalculatePlayerTurnEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
@@ -156,8 +159,29 @@ public final class CameraInputHandler {
             }
         }
 
-        // 清空当前动捕轨道与机械滑轨机位 (Delete 键)
+        // 清空当前动捕轨道、机械滑轨机位或建筑蓝图选区 (Delete 键)
         if (ModKeyMappings.CLEAR_TRACK.consumeClick()) {
+            BuildingSelectionManager bsm = BuildingSelectionManager.INSTANCE;
+            ItemStack mainHand = (mc.player != null) ? mc.player.getMainHandItem() : ItemStack.EMPTY;
+            ItemStack offHand = (mc.player != null) ? mc.player.getOffhandItem() : ItemStack.EMPTY;
+            boolean holdingWand = mainHand.is(ModItems.BUILD_WAND.get()) || offHand.is(ModItems.BUILD_WAND.get());
+
+            if (holdingWand || bsm.isPlacing() || bsm.hasSelection()) {
+                if (bsm.isPlacing()) {
+                    bsm.clearPlacement();
+                    if (mc.player != null) {
+                        mc.player.displayClientMessage(Component.literal("§e[建筑蓝图仪] 已退出全息放置模式"), true);
+                    }
+                    return;
+                } else if (bsm.hasSelection() || bsm.getPosA() != null || bsm.getPosB() != null) {
+                    bsm.clearSelection();
+                    if (mc.player != null) {
+                        mc.player.displayClientMessage(Component.literal("§e[建筑蓝图仪] 已清空当前建筑选区"), true);
+                    }
+                    return;
+                }
+            }
+
             if (PuppeteerController.INSTANCE.isPossessing()) {
                 Entity possessed = PuppeteerController.INSTANCE.getPossessedEntity();
                 TimelineTrack track = MasterClockEngine.INSTANCE.getTracks().get(possessed.getUUID().toString());
