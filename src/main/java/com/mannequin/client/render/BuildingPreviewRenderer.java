@@ -188,7 +188,7 @@ public final class BuildingPreviewRenderer {
 
         // 2. 渲染放置模式下的全息对齐框 (亮绿，支持吸附方块或视线投射，并响应高度偏移)
         if (bsm.isPlacing()) {
-            HitResult hit = mc.hitResult;
+            HitResult hit = mc.player != null ? mc.player.pick(64.0D, 0.0F, false) : mc.hitResult;
             BlockPos targetOrigin = null;
             if (hit instanceof BlockHitResult bhr && hit.getType() == HitResult.Type.BLOCK) {
                 targetOrigin = bhr.getBlockPos().relative(bhr.getDirection()).above(bsm.getPlacementOffsetY());

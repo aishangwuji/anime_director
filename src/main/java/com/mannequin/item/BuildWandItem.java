@@ -20,6 +20,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -66,20 +67,27 @@ public class BuildWandItem extends Item {
         if (level.isClientSide()) {
             BuildingSelectionManager bsm = BuildingSelectionManager.INSTANCE;
 
-            // 1. 若处于全息放置模式：
+            // 1. 若处于全息放置模式：右键永远是确认落地部署建筑！(Shift+右键退出放置)
             if (bsm.isPlacing()) {
                 if (player.isShiftKeyDown()) {
                     bsm.clearPlacement();
                     player.displayClientMessage(Component.literal("§e[建筑蓝图仪] 已退出放置模式"), true);
                     level.playSound(player, player.blockPosition(), SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.PLAYERS, 0.6F, 0.8F);
-                } else {
-                    bsm.rotatePlacement();
-                    level.playSound(player, player.blockPosition(), SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.PLAYERS, 0.8F, 1.2F);
-                    player.displayClientMessage(
-                            Component.literal(String.format("§a[建筑蓝图仪] 已旋转全息建筑：%d°", bsm.getPlacementRotation())),
-                            true
-                    );
+                    return InteractionResultHolder.sidedSuccess(stack, true);
                 }
+
+                // 支持 64 格长距离视线直接对准地面或空中确认部署
+                HitResult hit = player.pick(64.0D, 0.0F, false);
+                BlockPos targetOrigin;
+                if (hit instanceof BlockHitResult bhr && hit.getType() == HitResult.Type.BLOCK) {
+                    targetOrigin = bhr.getBlockPos().relative(bhr.getDirection()).above(bsm.getPlacementOffsetY());
+                } else {
+                    Vec3 look = player.getLookAngle();
+                    Vec3 targetEye = player.getEyePosition().add(look.scale(10.0D));
+                    targetOrigin = BlockPos.containing(targetEye).above(bsm.getPlacementOffsetY());
+                }
+
+                deployBuilding(player, level, targetOrigin);
                 return InteractionResultHolder.sidedSuccess(stack, true);
             }
 
@@ -127,7 +135,7 @@ public class BuildWandItem extends Item {
         if (level.isClientSide()) {
             BuildingSelectionManager bsm = BuildingSelectionManager.INSTANCE;
 
-            // 1. 放置模式：落地部署或退出
+            // 1. 放置模式：右键方块确认落地部署（Shift+右键退出放置）
             if (bsm.isPlacing()) {
                 if (player.isShiftKeyDown()) {
                     bsm.clearPlacement();
@@ -136,14 +144,8 @@ public class BuildWandItem extends Item {
                     return InteractionResult.SUCCESS;
                 }
 
-                BuildingBlueprintHelper.BlueprintInfo bp = bsm.getSelectedBlueprint();
                 BlockPos targetOrigin = clickedPos.relative(context.getClickedFace()).above(bsm.getPlacementOffsetY());
-                int rot = bsm.getPlacementRotation();
-
-                PacketDistributor.sendToServer(new PlaceBuildingPayload(targetOrigin, bp.fileName(), rot));
-
-                level.playSound(player, targetOrigin, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1.0F, 1.2F);
-                player.displayClientMessage(Component.literal(String.format("§a[建筑蓝图仪] 正在部署建筑「%s」 (旋转: %d°, 高度: %+d)...", bp.name(), rot, bsm.getPlacementOffsetY())), true);
+                deployBuilding(player, level, targetOrigin);
                 return InteractionResult.SUCCESS;
             }
 
@@ -170,6 +172,24 @@ public class BuildWandItem extends Item {
         }
 
         return InteractionResult.SUCCESS;
+    }
+
+    private void deployBuilding(Player player, Level level, BlockPos targetOrigin) {
+        BuildingSelectionManager bsm = BuildingSelectionManager.INSTANCE;
+        BuildingBlueprintHelper.BlueprintInfo bp = bsm.getSelectedBlueprint();
+        if (bp == null) {
+            return;
+        }
+
+        int rot = bsm.getPlacementRotation();
+        PacketDistributor.sendToServer(new PlaceBuildingPayload(targetOrigin, bp.fileName(), rot));
+
+        level.playSound(player, targetOrigin, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1.0F, 1.2F);
+        player.displayClientMessage(
+                Component.literal(String.format("§a[建筑蓝图仪] 正在部署建筑「%s」 (旋转: %d°, 高度: %+d)...", bp.name(), rot, bsm.getPlacementOffsetY())),
+                true
+        );
+        bsm.clearPlacement();
     }
 
     @Override
