@@ -47,23 +47,13 @@ public final class CameraInputHandler {
 
         if (event.getAction() == GLFW.GLFW_PRESS && holdingBuildWand) {
             int key = event.getKey();
-            int mods = event.getModifiers();
-            boolean isCtrl = (mods & GLFW.GLFW_MOD_CONTROL) != 0;
 
+            // Enter 键：选区就绪后直接打开打包保存窗口
             if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
                 if (bsm.hasSelection()) {
                     mc.setScreen(new BuildingLibraryScreen(BuildingLibraryScreen.Tab.EXPORT));
-                } else {
-                    mc.setScreen(new BuildingLibraryScreen(BuildingLibraryScreen.Tab.LIBRARY));
-                }
-                return;
-            }
-
-            if (isCtrl && key == GLFW.GLFW_KEY_S) {
-                if (bsm.hasSelection()) {
-                    mc.setScreen(new BuildingLibraryScreen(BuildingLibraryScreen.Tab.EXPORT));
                 } else if (mc.player != null) {
-                    mc.player.displayClientMessage(Component.literal("§e[建筑蓝图] 选区尚未就绪！请左键设角点 A、右键设角点 B 后再保存"), true);
+                    mc.player.displayClientMessage(Component.literal("§e[建筑蓝图] 选区尚未就绪！请左键设角点 A、右键设角点 B 后再按 Enter 保存"), true);
                 }
                 return;
             }
