@@ -266,14 +266,15 @@ public class StudioMusicScreen extends Screen {
                         "§7📋 顺序播放：播放完毕自动停止")))
                 .build());
 
-        // 6. 无级音量调节滑动条 (0% ~ 100%)
+        // 6. 无级音量调节滑动条 (0% ~ 100%，支持点击数字直接输入具体数值)
         float currentVol = engine.getVolume();
-        VolumeSlider volSlider = new VolumeSlider(
+        com.mannequin.client.gui.widget.DirectorNumericSlider volSlider = new com.mannequin.client.gui.widget.DirectorNumericSlider(
                 startX + panelWidth - 132, bottomBarY, 120, ctrlBtnHeight,
-                currentVol,
-                engine::setVolume
+                0.0, 1.0, currentVol,
+                "🔊 音量: ", "%", 0, true,
+                vol -> engine.setVolume(vol.floatValue())
         );
-        volSlider.setTooltip(Tooltip.create(Component.literal("§e[片场音量无级微调]\n§70% ~ 100% 实时硬件级 PCM 无损增益缩放\n保证拍摄运镜时背景乐与环境音质完美平衡")));
+        volSlider.setTooltip(Tooltip.create(Component.literal("§e[片场音量微调滑动条]\n§70% ~ 100% 实时硬件级 PCM 无损增益缩放\n★ 点击中间数字胶囊可直接键盘输入精确数值！\n保证拍摄运镜时背景乐与环境音质完美平衡")));
         addRenderableWidget(volSlider);
     }
 
@@ -434,30 +435,5 @@ public class StudioMusicScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false; // 不暂停单人游戏，背景音乐与排演无缝同步
-    }
-
-    /**
-     * 连续音量调节无级滑动条。
-     */
-    private static class VolumeSlider extends AbstractSliderButton {
-        private final java.util.function.Consumer<Float> onApply;
-
-        public VolumeSlider(int x, int y, int width, int height, float initialValue,
-                            java.util.function.Consumer<Float> onApply) {
-            super(x, y, width, height, Component.empty(), initialValue);
-            this.onApply = onApply;
-            updateMessage();
-        }
-
-        @Override
-        protected void updateMessage() {
-            int pct = (int) Math.round(this.value * 100.0);
-            setMessage(Component.literal("🔊 音量: " + pct + "%"));
-        }
-
-        @Override
-        protected void applyValue() {
-            onApply.accept((float) this.value);
-        }
     }
 }

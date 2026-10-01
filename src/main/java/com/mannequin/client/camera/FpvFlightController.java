@@ -78,7 +78,7 @@ public final class FpvFlightController {
                 }
             }
             if (tag.contains("maxSpeed")) {
-                this.maxSpeed = Math.max(0.2, Math.min(30.0, tag.getDouble("maxSpeed")));
+                this.maxSpeed = Math.max(0.2, Math.min(120.0, tag.getDouble("maxSpeed")));
             }
             if (tag.contains("stabilizationStrength")) {
                 this.stabilizationStrength = Math.max(0.0, Math.min(1.0, tag.getDouble("stabilizationStrength")));
@@ -105,7 +105,7 @@ public final class FpvFlightController {
     }
 
     public void setSpeed(double speed) {
-        this.maxSpeed = Math.max(0.2, Math.min(30.0, speed));
+        this.maxSpeed = Math.max(0.2, Math.min(120.0, speed));
         savePreferences();
     }
 

@@ -11,6 +11,7 @@ import com.mannequin.client.persistence.StudioPersistenceManager;
 import com.mannequin.client.studio.PureStudioManager;
 import com.mannequin.client.timeline.MasterClockEngine;
 import com.mannequin.client.timeline.PuppeteerController;
+import com.mannequin.client.gui.widget.DirectorNumericSlider;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
@@ -142,32 +143,30 @@ public class DirectorQuickMenuScreen extends Screen {
 
         // ==================== 第 1 行：飞控航速与推拉防抖阻尼 (无级滑动条) ====================
         int r1Y = gridStartY + (btnHeight + gapY);
-        // 4. 自由相机飞行航速滑动条 (0.2 m/s ~ 30.0 m/s)
-        double currentSpeed = flight.getSpeed();
-        double normSpeed = Math.max(0.0, Math.min(1.0, (currentSpeed - 0.2) / (30.0 - 0.2)));
-        DirectorSlider speedSlider = new DirectorSlider(
-                gridStartX, r1Y, btnWidth, btnHeight, normSpeed,
-                val -> Component.literal(String.format("🚀 航速: %.1fm/s", 0.2 + val * (30.0 - 0.2))),
-                val -> {
-                    double spd = 0.2 + val * (30.0 - 0.2);
+        // 4. 自由相机飞行航速滑动条 (0.2 m/s ~ 120.0 m/s，支持点击数字直接输入具体数值)
+        DirectorNumericSlider speedSlider = new DirectorNumericSlider(
+                gridStartX, r1Y, btnWidth, btnHeight,
+                0.2, 120.0, flight.getSpeed(),
+                "🚀 航速: ", "m/s", 1, false,
+                spd -> {
                     flight.setSpeed(spd);
                     flight.savePreferences();
                 }
         );
-        speedSlider.setTooltip(Tooltip.create(Component.literal("§e[飞行航速滑动条]\n§70.2m/s ~ 30.0m/s 无级自由微调\n低速支持厘米级慢速微移，高速支持大场景长镜头俯冲\n★ 技巧：按住 [Alt] 键可随时切入 0.25x 极端微移爬行！")));
+        speedSlider.setTooltip(Tooltip.create(Component.literal("§e[飞行航速微调滑动条]\n§70.2m/s ~ 120.0m/s 无级自由微调\n★ 点击中间数字胶囊可直接键盘输入精确数值！\n低速支持厘米级慢速微移，超高速支持大场景长镜头超音速俯冲\n★ 技巧：按住 [Alt] 键可随时切入 0.25x 极端微移爬行！")));
         addRenderableWidget(speedSlider);
 
-        // 5. 推拉运镜防抖阻尼滑动条 (0% ~ 100%)
-        double currentStab = flight.getStabilizationStrength();
-        DirectorSlider stabSlider = new DirectorSlider(
-                gridStartX + btnWidth + gapX, r1Y, btnWidth, btnHeight, currentStab,
-                val -> Component.literal(String.format("🛡 防抖: %d%%", (int) Math.round(val * 100.0))),
+        // 5. 推拉运镜防抖阻尼滑动条 (0% ~ 100%，支持点击数字直接输入具体数值)
+        DirectorNumericSlider stabSlider = new DirectorNumericSlider(
+                gridStartX + btnWidth + gapX, r1Y, btnWidth, btnHeight,
+                0.0, 1.0, flight.getStabilizationStrength(),
+                "🛡 防抖: ", "%", 0, true,
                 val -> {
                     flight.setStabilizationStrength(val);
                     flight.savePreferences();
                 }
         );
-        stabSlider.setTooltip(Tooltip.create(Component.literal("§e[推拉运镜液压防抖阻尼]\n§70% ~ 100% 液压云台级阻尼滤波\n0%：纯手动低延迟无平滑\n70%：黄金推拉防抖，过滤手部横向微颤与晃动\n100%：极致机械导轨平稳推移")));
+        stabSlider.setTooltip(Tooltip.create(Component.literal("§e[推拉运镜液压防抖阻尼]\n§70% ~ 100% 液压云台级阻尼滤波\n★ 点击中间数字胶囊可直接键盘输入精确数值！\n0%：纯手动低延迟无平滑\n70%：黄金推拉防抖，过滤手部横向微颤与晃动\n100%：极致机械导轨平稳推移")));
         addRenderableWidget(stabSlider);
 
         // 6. 构图画幅遮罩 (V)
@@ -248,34 +247,30 @@ public class DirectorQuickMenuScreen extends Screen {
                 .tooltip(Tooltip.create(Component.literal("§e[R] 一键倒带复位回起点\n§7瞬间将所有人偶、载具与机位吸回第 0 帧")))
                 .build());
 
-        // 11. 演播时间流速滑动条 (0.05x ~ 3.00x)
-        double currentRate = clock.getTimeScaleValue();
-        double normRate = Math.max(0.0, Math.min(1.0, (currentRate - 0.05) / (3.00 - 0.05)));
-        DirectorSlider timeScaleSlider = new DirectorSlider(
-                gridStartX + btnWidth + gapX, r3Y, btnWidth, btnHeight, normRate,
-                val -> Component.literal(String.format("⚡ 速率: %.2fx", 0.05 + val * (3.00 - 0.05))),
-                val -> {
-                    double rate = 0.05 + val * (3.00 - 0.05);
+        // 11. 演播时间流速滑动条 (0.05x ~ 3.00x，支持点击数字直接输入具体数值)
+        DirectorNumericSlider timeScaleSlider = new DirectorNumericSlider(
+                gridStartX + btnWidth + gapX, r3Y, btnWidth, btnHeight,
+                0.05, 3.00, clock.getTimeScaleValue(),
+                "⚡ 速率: ", "x", 2, false,
+                rate -> {
                     clock.setTimeScaleValue(rate);
                     clock.saveToDisk();
                 }
         );
-        timeScaleSlider.setTooltip(Tooltip.create(Component.literal("§e[演播时间流速滑动条]\n§70.05x ~ 3.00x 无级时间膨胀/压缩\n<1.0x：超慢动作与子弹时间，便于精细构图与慢动作成片\n1.0x：标准正常流速\n>1.0x：快进排演")));
+        timeScaleSlider.setTooltip(Tooltip.create(Component.literal("§e[演播时间流速滑动条]\n§70.05x ~ 3.00x 无级时间膨胀/压缩\n★ 点击中间数字胶囊可直接键盘输入精确数值！\n<1.0x：超慢动作与子弹时间，便于精细构图与慢动作成片\n1.0x：标准正常流速\n>1.0x：快进排演")));
         addRenderableWidget(timeScaleSlider);
 
-        // 12. 场景时长滑动条 (2.0s ~ 180.0s)
-        double currentSec = clock.getTotalDurationSeconds();
-        double normSec = Math.max(0.0, Math.min(1.0, (currentSec - 2.0) / (180.0 - 2.0)));
-        DirectorSlider durationSlider = new DirectorSlider(
-                gridStartX + (btnWidth + gapX) * 2, r3Y, btnWidth, btnHeight, normSec,
-                val -> Component.literal(String.format("⏱ 时长: %.1fs", 2.0 + val * (180.0 - 2.0))),
-                val -> {
-                    double sec = 2.0 + val * (180.0 - 2.0);
+        // 12. 场景时长滑动条 (2.0s ~ 180.0s，支持点击数字直接输入具体数值)
+        DirectorNumericSlider durationSlider = new DirectorNumericSlider(
+                gridStartX + (btnWidth + gapX) * 2, r3Y, btnWidth, btnHeight,
+                2.0, 180.0, clock.getTotalDurationSeconds(),
+                "⏱ 时长: ", "s", 1, false,
+                sec -> {
                     clock.setTotalDurationSeconds(sec);
                     clock.saveToDisk();
                 }
         );
-        durationSlider.setTooltip(Tooltip.create(Component.literal("§e[场景总时长滑动条]\n§72.0秒 ~ 180.0秒 无级时长设定\n控制多轨排演与分镜机位自动录制的循环周期")));
+        durationSlider.setTooltip(Tooltip.create(Component.literal("§e[场景总时长滑动条]\n§72.0秒 ~ 180.0秒 无级时长设定\n★ 点击中间数字胶囊可直接键盘输入精确数值！\n控制多轨排演与分镜机位自动录制的循环周期")));
         addRenderableWidget(durationSlider);
 
         // ==================== 第 4 行：主视角与全机位 MP4 直出 ====================
@@ -513,32 +508,5 @@ public class DirectorQuickMenuScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false; // 不暂停单人游戏，方便排演观察
-    }
-
-    /**
-     * 通用导演无级滑动条控件（封装 AbstractSliderButton，支持实时数值反馈与回调执行）。
-     */
-    private static class DirectorSlider extends AbstractSliderButton {
-        private final java.util.function.Consumer<Double> onApply;
-        private final java.util.function.Function<Double, Component> messageProvider;
-
-        public DirectorSlider(int x, int y, int width, int height, double initialValue,
-                              java.util.function.Function<Double, Component> messageProvider,
-                              java.util.function.Consumer<Double> onApply) {
-            super(x, y, width, height, Component.empty(), initialValue);
-            this.messageProvider = messageProvider;
-            this.onApply = onApply;
-            updateMessage();
-        }
-
-        @Override
-        protected void updateMessage() {
-            setMessage(messageProvider.apply(this.value));
-        }
-
-        @Override
-        protected void applyValue() {
-            onApply.accept(this.value);
-        }
     }
 }

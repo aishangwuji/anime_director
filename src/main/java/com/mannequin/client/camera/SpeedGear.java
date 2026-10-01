@@ -15,7 +15,8 @@ public enum SpeedGear {
     CRAWL(0.5, "0.5m/s (超微移)", "0.5m/s (Crawl)"),
     SLOW(2.0, "2.0m/s (慢推拉)", "2.0m/s (Slow)"),
     NORMAL(6.0, "6.0m/s (标准)", "6.0m/s (Normal)"),
-    FAST(16.0, "16.0m/s (高速)", "16.0m/s (Fast)");
+    FAST(16.0, "16.0m/s (高速)", "16.0m/s (Fast)"),
+    HYPERSONIC(120.0, "120.0m/s (极速巡航)", "120.0m/s (Hypersonic)");
 
     private final double speed;
     private final String displayNameZh;
