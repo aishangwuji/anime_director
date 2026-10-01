@@ -18,7 +18,38 @@ public final class BuildingSelectionManager {
     private BuildingBlueprintHelper.BlueprintInfo selectedBlueprint = null;
     private int placementRotation = 0; // 0, 90, 180, 270
 
+    public enum SelectionState {
+        EMPTY,        // 尚未设定任何选点
+        SELECTING_B,  // 已设定起始角点 A，等待设定对角点 B
+        LOCKED_READY  // 选区已闭合锁定（A与B均已就绪，防止误触破坏）
+    }
+
     private BuildingSelectionManager() {
+    }
+
+    public SelectionState getSelectionState() {
+        if (posA == null && posB == null) {
+            return SelectionState.EMPTY;
+        }
+        if (posA != null && posB == null) {
+            return SelectionState.SELECTING_B;
+        }
+        return SelectionState.LOCKED_READY;
+    }
+
+    /**
+     * 开启全新选区：设定起始角点 A，并自动清空旧的角点 B，杜绝残留畸形选区。
+     */
+    public void startNewSelection(BlockPos newA) {
+        this.posA = newA;
+        this.posB = null;
+    }
+
+    /**
+     * 锁定选区：设定对角点 B，进入已锁定就绪状态。
+     */
+    public void lockSelection(BlockPos newB) {
+        this.posB = newB;
     }
 
     public BlockPos getPosA() {

@@ -347,7 +347,12 @@ public class DirectorQuickMenuScreen extends Screen {
                 Component.literal("🏛 建筑蓝图"),
                 btn -> {
                     if (minecraft != null) {
-                        minecraft.setScreen(new BuildingLibraryScreen());
+                        com.mannequin.client.building.BuildingSelectionManager bsm = com.mannequin.client.building.BuildingSelectionManager.INSTANCE;
+                        if (bsm.hasSelection()) {
+                            minecraft.setScreen(new BuildingLibraryScreen(BuildingLibraryScreen.Tab.EXPORT));
+                        } else {
+                            minecraft.setScreen(new BuildingLibraryScreen(BuildingLibraryScreen.Tab.LIBRARY));
+                        }
                     }
                 })
                 .bounds(gridStartX + btnWidth + gapX, r5Y, btnWidth, btnHeight)

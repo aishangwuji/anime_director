@@ -37,7 +37,12 @@ public class BuildingLibraryScreen extends Screen {
     private EditBox descInput;
 
     public BuildingLibraryScreen() {
+        this(Tab.LIBRARY);
+    }
+
+    public BuildingLibraryScreen(Tab initialTab) {
         super(Component.literal("片场建筑蓝图库"));
+        this.activeTab = initialTab;
     }
 
     @Override
@@ -224,30 +229,52 @@ public class BuildingLibraryScreen extends Screen {
         // 4. 一键导出执行按钮
         addRenderableWidget(Button.builder(
                 Component.literal("💾 打包并导出为 .NBT 建筑文件"),
-                btn -> {
-                    String bName = nameInput.getValue();
-                    String bAuthor = authorInput.getValue();
-                    String bDesc = descInput.getValue();
-                    String fileName = BuildingBlueprintHelper.sanitizeFileName(bName) + ".nbt";
-
-                    BlockPos a = bsm.getPosA();
-                    BlockPos b = bsm.getPosB();
-
-                    // 发送网络包由服务端进行安全序列化落盘
-                    PacketDistributor.sendToServer(new ExportBuildingPayload(a, b, fileName, bName, bAuthor, bDesc));
-
-                    // 切换回建筑库标签
-                    activeTab = Tab.LIBRARY;
-                    refreshBlueprints();
-                    rebuildWidgets();
-                })
+                btn -> doExport())
                 .bounds(startX + (panelWidth - 240) / 2, currentY, 240, 24)
                 .tooltip(Tooltip.create(Component.literal("§a将框选区域内的方块结构完整打包为单文件！\n§7导出后可直接复制发给朋友或在片场库一键生成")))
                 .build());
+
+        setInitialFocus(nameInput);
+    }
+
+    private void doExport() {
+        BuildingSelectionManager bsm = BuildingSelectionManager.INSTANCE;
+        if (!bsm.hasSelection() || nameInput == null) {
+            return;
+        }
+        String bName = nameInput.getValue().trim();
+        if (bName.isEmpty()) {
+            bName = "新建片场建筑_" + (System.currentTimeMillis() % 1000);
+        }
+        String bAuthor = authorInput != null ? authorInput.getValue().trim() : "片场置景师";
+        String bDesc = descInput != null ? descInput.getValue().trim() : "精选漫剧片场布景";
+        String fileName = BuildingBlueprintHelper.sanitizeFileName(bName) + ".nbt";
+
+        BlockPos a = bsm.getPosA();
+        BlockPos b = bsm.getPosB();
+
+        // 发送网络包由服务端进行安全序列化落盘
+        PacketDistributor.sendToServer(new ExportBuildingPayload(a, b, fileName, bName, bAuthor, bDesc));
+
+        if (minecraft != null && minecraft.player != null) {
+            minecraft.player.displayClientMessage(
+                    Component.literal(String.format("§a[建筑蓝图] ✔ 建筑「%s」已成功打包导出为 .nbt 并加入蓝图库！", bName)),
+                    true
+            );
+        }
+
+        // 切换回建筑库标签
+        activeTab = Tab.LIBRARY;
+        refreshBlueprints();
+        rebuildWidgets();
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (activeTab == Tab.EXPORT && (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)) {
+            doExport();
+            return true;
+        }
         if (keyCode == GLFW.GLFW_KEY_R) {
             BuildingSelectionManager.INSTANCE.rotatePlacement();
             return true;

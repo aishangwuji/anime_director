@@ -315,16 +315,20 @@ public final class TimelineHudOverlay implements LayeredDraw.Layer {
             color = 0xFFFF4444;
         } else if (holdingBuildWand) {
             if (bsm.isPlacing()) {
-                tipText = "🏛 全息放置模式：[左键/空中右键] 旋转90°，[右键地面方块] 落地部署，[Shift+右键/Del] 取消放置";
+                tipText = String.format("🏛 [全息放置中] 旋转: %d° | 高度: %+d | [滚轮] 旋转 | [Shift+滚轮] 升降 | [右键地面] 部署 | [Delete] 退出",
+                        bsm.getPlacementRotation(), bsm.getPlacementOffsetY());
                 color = 0xFF55FF55;
-            } else if (bsm.hasSelection()) {
-                tipText = "🏛 建筑选区已就绪 (" + bsm.getSelectionSize().getX() + "×" + bsm.getSelectionSize().getY() + "×" + bsm.getSelectionSize().getZ() + ")：[空中右键] 蓝图库打包导出，[Shift+右键/Del] 清空选区";
+            } else if (bsm.getSelectionState() == com.mannequin.client.building.BuildingSelectionManager.SelectionState.LOCKED_READY) {
+                net.minecraft.core.Vec3i size = bsm.getSelectionSize();
+                long volume = (long) size.getX() * size.getY() * size.getZ();
+                tipText = String.format("🏛 [✔ 选区已就绪 %d×%d×%d 共 %,d 方块] 【Enter / 空中右键】保存打包 | 【Ctrl+左键 / Delete】清空重选",
+                        size.getX(), size.getY(), size.getZ(), volume);
                 color = 0xFF00E5FF;
-            } else if (bsm.getPosA() != null) {
-                tipText = "🏛 正在框选建筑：已定A点，[右键方块] 设B点，[Shift+右键] 自身位置设为B点(空中/虚空选点)，[空中右键] 视线定点";
+            } else if (bsm.getSelectionState() == com.mannequin.client.building.BuildingSelectionManager.SelectionState.SELECTING_B) {
+                tipText = "🏛 [选区 步骤 2/2] 【右键】对角定点 B (Shift+右键自身/空中投射) | 【左键】重设点 A | 【Delete】清空";
                 color = 0xFFFFAA00;
             } else {
-                tipText = "🏛 建筑蓝图仪：[左键] 设A点(Shift+左键空中自身)，[右键] 设B点(Shift+右键空中自身)，[空中右键] 蓝图库";
+                tipText = "🏛 [选区 步骤 1/2] 【左键】起始定点 A (Shift+左键自身/空中投射) | 【Enter / 空中右键】打开蓝图库";
                 color = 0xFF00E5FF;
             }
         } else if (puppeteer.isRecording()) {

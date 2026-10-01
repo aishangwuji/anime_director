@@ -1,6 +1,7 @@
 package com.mannequin.client.camera;
 
 import com.mannequin.client.building.BuildingSelectionManager;
+import com.mannequin.client.gui.BuildingLibraryScreen;
 import com.mannequin.client.gui.DirectorQuickMenuScreen;
 import com.mannequin.client.gui.StudioMusicScreen;
 import com.mannequin.client.gui.TimelineHudOverlay;
@@ -18,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.event.CalculatePlayerTurnEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
+import org.lwjgl.glfw.GLFW;
 
 /**
  * 导演相机输入处理器（CameraInputHandler）。
@@ -35,6 +37,52 @@ public final class CameraInputHandler {
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen != null) {
             return;
+        }
+
+        // 0. 建筑蓝图法杖快捷操作（Enter 呼出打包/蓝图库、Ctrl+S 保存、Backspace 清空选区）
+        ItemStack mainHand = (mc.player != null) ? mc.player.getMainHandItem() : ItemStack.EMPTY;
+        ItemStack offHand = (mc.player != null) ? mc.player.getOffhandItem() : ItemStack.EMPTY;
+        boolean holdingBuildWand = mainHand.is(ModItems.BUILD_WAND.get()) || offHand.is(ModItems.BUILD_WAND.get());
+        BuildingSelectionManager bsm = BuildingSelectionManager.INSTANCE;
+
+        if (event.getAction() == GLFW.GLFW_PRESS && holdingBuildWand) {
+            int key = event.getKey();
+            int mods = event.getModifiers();
+            boolean isCtrl = (mods & GLFW.GLFW_MOD_CONTROL) != 0;
+
+            if (key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+                if (bsm.hasSelection()) {
+                    mc.setScreen(new BuildingLibraryScreen(BuildingLibraryScreen.Tab.EXPORT));
+                } else {
+                    mc.setScreen(new BuildingLibraryScreen(BuildingLibraryScreen.Tab.LIBRARY));
+                }
+                return;
+            }
+
+            if (isCtrl && key == GLFW.GLFW_KEY_S) {
+                if (bsm.hasSelection()) {
+                    mc.setScreen(new BuildingLibraryScreen(BuildingLibraryScreen.Tab.EXPORT));
+                } else if (mc.player != null) {
+                    mc.player.displayClientMessage(Component.literal("§e[建筑蓝图] 选区尚未就绪！请左键设角点 A、右键设角点 B 后再保存"), true);
+                }
+                return;
+            }
+
+            if (key == GLFW.GLFW_KEY_BACKSPACE) {
+                if (bsm.isPlacing()) {
+                    bsm.clearPlacement();
+                    if (mc.player != null) {
+                        mc.player.displayClientMessage(Component.literal("§e[建筑蓝图仪] 已退出全息放置模式"), true);
+                    }
+                    return;
+                } else if (bsm.hasSelection() || bsm.getPosA() != null || bsm.getPosB() != null) {
+                    bsm.clearSelection();
+                    if (mc.player != null) {
+                        mc.player.displayClientMessage(Component.literal("§e[建筑蓝图仪] 已清空当前建筑选区"), true);
+                    }
+                    return;
+                }
+            }
         }
 
         // 切换导演相机自由飞控
@@ -161,12 +209,7 @@ public final class CameraInputHandler {
 
         // 清空当前动捕轨道、机械滑轨机位或建筑蓝图选区 (Delete 键)
         if (ModKeyMappings.CLEAR_TRACK.consumeClick()) {
-            BuildingSelectionManager bsm = BuildingSelectionManager.INSTANCE;
-            ItemStack mainHand = (mc.player != null) ? mc.player.getMainHandItem() : ItemStack.EMPTY;
-            ItemStack offHand = (mc.player != null) ? mc.player.getOffhandItem() : ItemStack.EMPTY;
-            boolean holdingWand = mainHand.is(ModItems.BUILD_WAND.get()) || offHand.is(ModItems.BUILD_WAND.get());
-
-            if (holdingWand || bsm.isPlacing() || bsm.hasSelection()) {
+            if (holdingBuildWand || bsm.isPlacing() || bsm.hasSelection()) {
                 if (bsm.isPlacing()) {
                     bsm.clearPlacement();
                     if (mc.player != null) {

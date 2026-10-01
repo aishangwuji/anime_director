@@ -60,48 +60,44 @@ public final class BuildingPreviewRenderer {
                 }
 
                 // 2. 选区模式：
-                if (player.isShiftKeyDown()) {
-                    // Shift + 左键：以自身当前位置为角点 A
-                    BlockPos myPos = player.blockPosition();
-                    bsm.setPosA(myPos);
-                    event.getLevel().playSound(player, myPos, SoundEvents.NOTE_BLOCK_HARP.value(), SoundSource.PLAYERS, 0.8F, 1.4F);
-                    if (bsm.getPosB() != null) {
-                        Vec3i size = bsm.getSelectionSize();
-                        long volume = (long) size.getX() * size.getY() * size.getZ();
-                        player.displayClientMessage(
-                                Component.literal(String.format("§b[建筑蓝图仪] 已将你所在位置锁定为角点 A！选区尺寸: §e%d × %d × %d §7(共 %,d 方块)",
-                                        size.getX(), size.getY(), size.getZ(), volume)),
-                                true
-                        );
-                    } else {
-                        player.displayClientMessage(
-                                Component.literal(String.format("§b[建筑蓝图仪] 已将你所在位置锁定为角点 A: (%d, %d, %d)",
-                                        myPos.getX(), myPos.getY(), myPos.getZ())),
-                                true
-                        );
-                    }
-                } else {
-                    // 普通左键方块：设方块为角点 A
-                    BlockPos clickedPos = event.getPos();
-                    bsm.setPosA(clickedPos);
-                    event.getLevel().playSound(player, clickedPos, SoundEvents.NOTE_BLOCK_HARP.value(), SoundSource.PLAYERS, 0.8F, 1.4F);
+                BlockPos clickedPos = event.getPos();
+                boolean isCtrl = net.minecraft.client.gui.screens.Screen.hasControlDown();
+                boolean isShift = player.isShiftKeyDown();
 
-                    if (bsm.getPosB() != null) {
-                        Vec3i size = bsm.getSelectionSize();
-                        long volume = (long) size.getX() * size.getY() * size.getZ();
-                        player.displayClientMessage(
-                                Component.literal(String.format("§b[建筑蓝图仪] 已锁定角点 A！选区尺寸: §e%d × %d × %d §7(共 %,d 方块) | 空中右键呼出蓝图库",
-                                        size.getX(), size.getY(), size.getZ(), volume)),
-                                true
-                        );
-                    } else {
-                        player.displayClientMessage(
-                                Component.literal(String.format("§b[建筑蓝图仪] 已设定角点 A: (%d, %d, %d)，请右键设定角点 B (Shift+右键可将自身坐标设为B点)",
-                                        clickedPos.getX(), clickedPos.getY(), clickedPos.getZ())),
-                                true
-                        );
-                    }
+                // A. 若按住 Ctrl 或 Shift -> 强制重设/开启全新选区（清空旧 B 点，杜绝残留）
+                if (isCtrl || isShift) {
+                    BlockPos targetPos = isShift ? player.blockPosition() : clickedPos;
+                    bsm.startNewSelection(targetPos);
+                    event.getLevel().playSound(player, targetPos, SoundEvents.NOTE_BLOCK_HARP.value(), SoundSource.PLAYERS, 0.8F, 1.4F);
+                    player.displayClientMessage(
+                            Component.literal(String.format("§b[建筑蓝图] 已重设起始角点 A: (%d, %d, %d)！请对角【右键】设定对角点 B",
+                                    targetPos.getX(), targetPos.getY(), targetPos.getZ())),
+                            true
+                    );
+                    return;
                 }
+
+                // B. 若选区已闭合锁定（LOCKED_READY） -> 防误触保护！不改动选区，引导快捷保存或重选
+                if (bsm.getSelectionState() == BuildingSelectionManager.SelectionState.LOCKED_READY) {
+                    Vec3i size = bsm.getSelectionSize();
+                    long volume = (long) size.getX() * size.getY() * size.getZ();
+                    event.getLevel().playSound(player, clickedPos, SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.PLAYERS, 0.7F, 1.2F);
+                    player.displayClientMessage(
+                            Component.literal(String.format("§e[建筑蓝图] 选区已锁定 (%d×%d×%d 共 %,d 方块)！按【Enter / 空中右键】保存，【Ctrl+左键 / Delete】重选",
+                                    size.getX(), size.getY(), size.getZ(), volume)),
+                            true
+                    );
+                    return;
+                }
+
+                // C. 普通左键方块：设定起始角点 A（清空旧 B）
+                bsm.startNewSelection(clickedPos);
+                event.getLevel().playSound(player, clickedPos, SoundEvents.NOTE_BLOCK_HARP.value(), SoundSource.PLAYERS, 0.8F, 1.4F);
+                player.displayClientMessage(
+                        Component.literal(String.format("§b[建筑蓝图] 已设定起始角点 A: (%d, %d, %d)！请对角【右键】设定对角点 B",
+                                clickedPos.getX(), clickedPos.getY(), clickedPos.getZ())),
+                        true
+                );
             }
         }
     }
@@ -130,50 +126,40 @@ public final class BuildingPreviewRenderer {
                 return;
             }
 
-            // 2. 选区模式：Shift + 左键空气 -> 自身当前坐标为角点 A
-            if (player.isShiftKeyDown()) {
-                BlockPos myPos = player.blockPosition();
-                bsm.setPosA(myPos);
-                event.getLevel().playSound(player, myPos, SoundEvents.NOTE_BLOCK_HARP.value(), SoundSource.PLAYERS, 0.8F, 1.4F);
-                if (bsm.getPosB() != null) {
-                    Vec3i size = bsm.getSelectionSize();
-                    long volume = (long) size.getX() * size.getY() * size.getZ();
-                    player.displayClientMessage(
-                            Component.literal(String.format("§b[建筑蓝图仪] 已将你所在位置锁定为角点 A！选区尺寸: §e%d × %d × %d §7(共 %,d 方块)",
-                                    size.getX(), size.getY(), size.getZ(), volume)),
-                            true
-                    );
-                } else {
-                    player.displayClientMessage(
-                            Component.literal(String.format("§b[建筑蓝图仪] 已将你所在位置锁定为角点 A: (%d, %d, %d)",
-                                    myPos.getX(), myPos.getY(), myPos.getZ())),
-                            true
-                    );
-                }
+            // 2. 选区模式：
+            boolean isCtrl = net.minecraft.client.gui.screens.Screen.hasControlDown();
+            boolean isShift = player.isShiftKeyDown();
+
+            // 若选区已锁定（LOCKED_READY）且未按 Ctrl/Shift -> 防误触保护
+            if (bsm.getSelectionState() == BuildingSelectionManager.SelectionState.LOCKED_READY && !isCtrl && !isShift) {
+                Vec3i size = bsm.getSelectionSize();
+                long volume = (long) size.getX() * size.getY() * size.getZ();
+                event.getLevel().playSound(player, player.blockPosition(), SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.PLAYERS, 0.7F, 1.2F);
+                player.displayClientMessage(
+                        Component.literal(String.format("§e[建筑蓝图] 选区已锁定 (%d×%d×%d 共 %,d 方块)！按【Enter / 空中右键】保存，【Ctrl+左键 / Delete】重选",
+                                size.getX(), size.getY(), size.getZ(), volume)),
+                        true
+                );
                 return;
             }
 
-            // 3. 普通左键空气 -> 视线前方 12 格投射设定角点 A
-            Vec3 look = player.getLookAngle();
-            Vec3 targetEye = player.getEyePosition().add(look.scale(12.0D));
-            BlockPos airPos = BlockPos.containing(targetEye);
-            bsm.setPosA(airPos);
-            event.getLevel().playSound(player, airPos, SoundEvents.NOTE_BLOCK_HARP.value(), SoundSource.PLAYERS, 0.8F, 1.4F);
-            if (bsm.getPosB() != null) {
-                Vec3i size = bsm.getSelectionSize();
-                long volume = (long) size.getX() * size.getY() * size.getZ();
-                player.displayClientMessage(
-                        Component.literal(String.format("§b[建筑蓝图仪] 已在视线空中设立角点 A: (%d, %d, %d)！选区尺寸: §e%d × %d × %d §7(共 %,d 方块)",
-                                airPos.getX(), airPos.getY(), airPos.getZ(), size.getX(), size.getY(), size.getZ(), volume)),
-                        true
-                );
+            // 视线投射或自身坐标作为角点 A
+            BlockPos airPos;
+            if (isShift) {
+                airPos = player.blockPosition();
             } else {
-                player.displayClientMessage(
-                        Component.literal(String.format("§b[建筑蓝图仪] 已在视线空中设立角点 A: (%d, %d, %d)，请右键设定角点 B",
-                                airPos.getX(), airPos.getY(), airPos.getZ())),
-                        true
-                );
+                Vec3 look = player.getLookAngle();
+                Vec3 targetEye = player.getEyePosition().add(look.scale(16.0D));
+                airPos = BlockPos.containing(targetEye);
             }
+
+            bsm.startNewSelection(airPos);
+            event.getLevel().playSound(player, airPos, SoundEvents.NOTE_BLOCK_HARP.value(), SoundSource.PLAYERS, 0.8F, 1.4F);
+            player.displayClientMessage(
+                    Component.literal(String.format("§b[建筑蓝图] 已在空中设定起始角点 A: (%d, %d, %d)！请对角【右键】设定对角点 B",
+                            airPos.getX(), airPos.getY(), airPos.getZ())),
+                    true
+            );
         }
     }
 
